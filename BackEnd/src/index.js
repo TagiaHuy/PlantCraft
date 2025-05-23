@@ -15,6 +15,15 @@ app.use('/api', messageRoutes);
 app.use('/api', todoRoutes);
 
 // Khởi động server
-app.listen(config.port, () => {
+const server = app.listen(config.port, '0.0.0.0', () => {
   console.log(`Server running on port ${config.port}`)
+});
+
+// Xử lý graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM signal. Performing graceful shutdown...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
