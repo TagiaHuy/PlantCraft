@@ -14,6 +14,11 @@ app.use(express.json());
 app.use('/api', messageRoutes);
 app.use('/api', todoRoutes);
 
+// ✅ Add route test
+app.get('/', (req, res) => {
+  res.send('API is working!');
+});
+
 // Khởi động server
 const server = app.listen(config.port, '0.0.0.0', () => {
   console.log(`Server running on port ${config.port}`)
