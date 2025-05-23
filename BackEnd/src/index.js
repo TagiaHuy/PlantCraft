@@ -1,23 +1,20 @@
 const express = require('express');
 const cors = require('cors');
+const config = require('./config');
+const messageRoutes = require('./routes/message');
+const todoRoutes = require('./routes/todo');
 
 const app = express();
 
-// ✅ Đặt cors ở đây — trước các route!
-app.use(cors({
-  origin: '*', // hoặc '*' nếu đang test
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
-
+// Middleware
+app.use(cors(config.corsOptions));
 app.use(express.json());
 
-// Các route bên dưới
-app.get('/json', (req, res) => {
-  res.json({ message: 'Hello from backend!' });
-});
+// Routes
+app.use('/api', messageRoutes);
+app.use('/api', todoRoutes);
 
 // Khởi động server
-app.listen(3000, () => {
-  console.log('Server running on port 3000');
+app.listen(config.port, () => {
+  console.log(`Server running on port ${config.port}`)
 });
