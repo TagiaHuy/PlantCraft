@@ -5,10 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const App = () => {
   const [backendMessage] = useState('');
   const [apiText, setApiText] = useState('');
-
+  const SERVER_ADDRESS = 'https://plancraft-production.up.railway.app/json';
+  const LOCAL_ADDRESS = 'http://172.17.153.29:3000/json';
   const fetchJson = async () => {
     try {
-      const response = await fetch('https://plancraft-production.up.railway.app/json');
+      const response = await fetch(LOCAL_ADDRESS);
       const data = await response.json();
       setApiText(data.message);
     } catch (error) {
