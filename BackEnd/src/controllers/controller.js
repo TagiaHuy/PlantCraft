@@ -4,6 +4,6 @@
 module.exports = {
     // Example: get data
     getData: (req, res) => {
-        res.json({ message: "API logic handled by controller. hello dcmm" });
+        res.json({ message: "Ban nay cute the." });
     }
 };
