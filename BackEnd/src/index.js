@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const controller = require('./controller');
+const apiRoutes = require('./routes/api');
 
 const app = express();
 
@@ -14,7 +14,7 @@ app.use(cors({
 app.use(express.json());
 
 // Các route bên dưới
-app.get('/json', controller.getData);
+app.use('/api', apiRoutes);
 
 // Khởi động server
 app.listen(3000, () => {
