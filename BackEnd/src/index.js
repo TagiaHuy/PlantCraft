@@ -27,6 +27,9 @@ app.use(express.json());
 // Các route bên dưới
 app.use('/api', apiRoutes);
 
+// Serve static files from the public directory
+app.use(express.static('public')); 
+
 // Khởi động server
 app.listen(3000, () => {
   console.log('Server running on port 3000');
