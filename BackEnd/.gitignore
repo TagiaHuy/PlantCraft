@@ -1,5 +1,2 @@
 # Ignore environment variables file
 .env
-.env.example
-# Ignore node_modules directory
-node_modules/
