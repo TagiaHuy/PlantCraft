@@ -32,8 +32,8 @@ app.use('/api', apiRoutes);
 app.use(express.static('public')); 
 
 // Khởi động server
-const server = app.listen(config.port, '0.0.0.0', () => {
-  console.log(`Server running on port ${config.port}`)
+const server = app.listen(process.env.PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${process.env.PORT}`)
 });
 
 // Xử lý graceful shutdown
