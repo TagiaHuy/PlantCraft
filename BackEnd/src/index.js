@@ -1,25 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-<<<<<<< HEAD
-const config = require('./config');
-const messageRoutes = require('./routes/message');
-const todoRoutes = require('./routes/todo');
 
-const app = express();
-
-// Middleware
-app.use(cors(config.corsOptions));
-app.use(express.json());
-
-// Routes
-app.use('/api', messageRoutes);
-app.use('/api', todoRoutes);
-
-// ✅ Add route test
-app.get('/', (req, res) => {
-  res.send('API is working!');
-});
-=======
 require('dotenv').config();
 const apiRoutes = require('./routes/api');
 const dbService = require('./services/db');
@@ -49,7 +30,6 @@ app.use('/api', apiRoutes);
 
 // Serve static files from the public directory
 app.use(express.static('public')); 
->>>>>>> feature/login
 
 // Khởi động server
 const server = app.listen(config.port, '0.0.0.0', () => {
