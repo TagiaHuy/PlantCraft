@@ -5,6 +5,7 @@ const calculator = require('../controllers/calculator');
 const sayhello = require('../controllers/sayHello');
 const plantController = require('../controllers/plantController');
 const userController = require('../controllers/userController');
+
 const { authenticateToken, requireEmailVerified } = require('../middleware/auth');
 
 // Define API routes
