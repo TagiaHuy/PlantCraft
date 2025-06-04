@@ -16,24 +16,19 @@ src/
 
 ## Tính năng
 
-### Quản lý cây trồng
-- Xem danh sách cây
-- Xem chi tiết cây
-- Thêm cây mới
-- Cập nhật thông tin cây
-- Xóa cây
 
-### Quản lý người dùng
+
+### Quản lý người dùng (Quỳnh Trang)
 - Đăng ký / Đăng nhập / Đăng xuất
 - Cập nhật thông tin cá nhân (tên, avatar,...)
 - Bảo mật tài khoản (reset mật khẩu, xác thực email)
 
-### Mục tiêu cá nhân
+### Mục tiêu cá nhân (Hải Bắc)
 - Tạo mục tiêu mới: tên, mô tả, thời gian bắt đầu/kết thúc, độ ưu tiên
 - Chỉnh sửa, xóa mục tiêu
 - Danh sách mục tiêu (có trạng thái: đang làm, hoàn thành, hủy bỏ)
 
-### Lộ trình mục tiêu
+### Lộ trình mục tiêu (Quang Lâm)
 - Tạo lộ trình gồm nhiều giai đoạn/phần
 - Trong mỗi phần: thêm các nhiệm vụ nhỏ (task)
 
