@@ -166,7 +166,7 @@ Authorization: Bearer jwt_token_here
   }
 }
 ```
-
+--------------------------------------
 ## Goals Management
 
 ### Tạo mục tiêu mới
@@ -266,7 +266,7 @@ Authorization: Bearer jwt_token_here
   "total_pages": 1
 }
 ```
-
+--------------------------------------
 ## Tasks Management
 
 ### Tạo nhiệm vụ mới
@@ -549,7 +549,7 @@ Authorization: Bearer jwt_token_here
   }
 }
 ```
-
+----------------------------
 ## Error Responses
 
 ### Lỗi xác thực (401)

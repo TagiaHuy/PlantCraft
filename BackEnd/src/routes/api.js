@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const goalController = require('../controllers/goalController');
 
 const { authenticateToken, requireEmailVerified } = require('../middleware/auth');
 
@@ -15,5 +16,8 @@ router.post('/auth/reset-password', userController.resetPassword);
 // Protected user routes
 router.get('/user/profile', authenticateToken, userController.getProfile);
 router.put('/user/profile', authenticateToken, userController.updateProfile);
+
+// Goals routes
+router.post('/goals', goalController.createGoal);
 
 module.exports = router;
