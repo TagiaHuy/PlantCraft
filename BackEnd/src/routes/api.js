@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 
-const { authenticateToken, requireEmailVerified } = require('../middleware/auth');
+// Import middleware
+const { authenticateToken } = require('../middleware/auth');
 
+// Route đăng ký và đăng nhập
 router.post('/auth/register', userController.register);
-router.post('/auth/login', userController.login);
+router.post('/auth/login', userController.login); // Xóa route trùng lặp
 router.get('/auth/verify-email', userController.verifyEmail);
 
 // Password reset routes

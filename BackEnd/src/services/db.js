@@ -1,6 +1,5 @@
-// db.js
 // Database service for handling MySQL connections and queries
-
+require('dotenv').config();
 const mysql = require('mysql2/promise');
 
 // Create a connection pool instead of a single connection
@@ -12,6 +11,9 @@ let pool = null;
  */
 const initializePool = async () => {
   try {
+    // Ensure pool is only created once
+    if (pool) return pool;
+
     pool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
@@ -19,10 +21,11 @@ const initializePool = async () => {
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
       waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
-    }); 
-    
+      connectionLimit: 10, // Max number of connections
+      queueLimit: 0,       // Unlimited queue limit
+      acquireTimeout: 30000, // Timeout for acquiring a connection
+    });
+
     console.log('Database connection pool initialized');
     return pool;
   } catch (error) {
@@ -58,8 +61,23 @@ const query = async (sql, params = []) => {
   }
 };
 
+/**
+ * Close the database pool (useful for graceful shutdown)
+ */
+const closePool = async () => {
+  try {
+    if (pool) {
+      await pool.end();  // Gracefully close the pool
+      console.log('Database pool closed');
+    }
+  } catch (error) {
+    console.error('Error closing database pool:', error);
+  }
+};
+
 module.exports = {
   initializePool,
   getPool,
-  query
+  query,
+  closePool  // Add closePool method to close pool when necessary
 };
