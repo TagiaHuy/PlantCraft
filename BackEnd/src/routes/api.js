@@ -5,9 +5,10 @@ const userController = require('../controllers/userController');
 // Import middleware
 const { authenticateToken } = require('../middleware/auth');
 
-// Route đăng ký và đăng nhập
+// Route register and login
 router.post('/auth/register', userController.register);
-router.post('/auth/login', userController.login); // Xóa route trùng lặp
+router.post('/auth/login', userController.login);
+router.post('/auth/logout', authenticateToken, userController.logout);
 router.get('/auth/verify-email', userController.verifyEmail);
 
 // Password reset routes

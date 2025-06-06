@@ -148,6 +148,60 @@ const UserController = {
     }
   },
 
+
+  /**   
+   * User logout
+   */
+  logout: async (req, res) => {
+    try {
+      const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1]; // Get token from Authorization header
+      if (!token) {
+        return res.status(400).json({ message: 'Token không hợp lệ.' });
+      }
+      // Add token to blacklist or handle session invalidation here if needed
+      const result = await UserModel.logoutSession(token);
+
+      if (result.affectedRows === 0) {
+        return res.status(400).json({ message: 'Không tìm thấy phiên đăng nhập để đăng xuất.' });
+      }
+
+      res.json({ message: 'Đăng xuất thành công.' });
+
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ message: 'Đã có lỗi xảy ra khi đăng xuất.' });
+    }
+  },
+
+  /**
+   * Get information of the current user
+   */
+  getProfile: async (req, res) => {
+    try {
+      const userId = req.user.id; // From auth middleware
+      // Get user information from database
+      const user = await UserModel.getUserById(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
+      }
+
+      // Return user information
+      res.json({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatarUrl: user.avatar_url,
+          isEmailVerified: user.is_email_verified
+        }
+      });
+    } catch (error) {
+      console.error('Get profile error:', error);
+      res.status(500).json({ message: 'Đã có lỗi xảy ra khi lấy thông tin người dùng.' });
+    }
+  },
+
   /**
    * Update user profile
    */

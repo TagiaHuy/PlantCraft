@@ -41,12 +41,58 @@ const UserModel = {
     }
   },
 
+  /**
+   * Xóa phiên đăng nhập của người dùng khỏi active_sessions
+   * Hoặc thêm token vào blacklist
+   */
+  logoutSession : async (userId, token) => {
+    try {
+      // Xóa phiên đăng nhập khỏi active_sessions
+      const query = 'DELETE FROM active_sessions WHERE token = ?';
+      const result = await db.query(query, [token]);
+      return result;  // Trả về kết quả truy vấn xóa
+    } catch (error) {
+      console.error('Error logging out session:', error);
+      throw new Error('Không thể đăng xuất.');
+    }
+  },
+
+  /**
+   * Lấy thông tin người dùng từ active_sessions
+   * @param {number} userId - ID người dùng
+   * @param {string} token - Token phiên đăng nhập
+   * @returns {Promise<Object>} Thông tin người dùng
+   */
+  getUserByIdAndToken: async (userId, token) => {
+    try {
+      const query = 'SELECT u.id, u.name, u.email, u.avatar_url, u.is_email_verified, u.created_at ' +
+                    'FROM users u JOIN active_sessions s ON u.id = s.user_id WHERE u.id = ? AND s.token = ?';
+      const results = await db.query(query, [userId, token]);
+      return results.length > 0 ? results[0] : null;  // Trả về người dùng đầu tiên tìm thấy
+    } catch (error) {
+      console.error('Error getting user by ID and token:', error);
+      throw new Error('Không thể lấy thông tin người dùng');
+    }
+  },
+
+  /**
+   * Cập nhật thông tin người dùng
+   * @param {number} userId - ID người dùng
+   * @param {Object} updateData - Dữ liệu cập nhật
+   * @returns {Promise<Object>} Kết quả cập nhật
+   */
   updateProfile: async (userId, updateData) => {
     try {
       const query = 'UPDATE users SET name = ?, avatar_url = ? WHERE id = ?';
       const params = [updateData.name, updateData.avatarUrl, userId];
       const result = await db.query(query, params);
-      return result;
+
+      if (result.affectedRows === 0) {
+        throw new Error('Không tìm thấy người dùng để cập nhật.');
+      }
+      // Lấy lại thông tin người dùng đã cập nhật
+      const updatedUser = await UserModel.getUserById(userId);
+      return updatedUser;
     } catch (error) {
       console.error('Error updating user profile:', error);
       throw new Error('Không thể cập nhật thông tin người dùng');
@@ -84,6 +130,11 @@ const UserModel = {
     }
   },
 
+  /**
+   * Lấy thông tin người dùng theo ID
+   * @param {number} userId - ID người dùng
+   * @returns {Promise<Object>} Thông tin người dùng
+   */
   getUserById: async (userId) => {
     try {
       const query = 'SELECT id, name, email, avatar_url, is_email_verified, created_at FROM users WHERE id = ?';

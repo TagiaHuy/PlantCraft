@@ -93,6 +93,12 @@ Authorization: Bearer jwt_token_here
   "message": "Đăng xuất thành công"
 }
 ```
+**Response Error: (401)**
+```json
+{
+  "message": "Token không hợp lệ hoặc đã hết hạn"
+}
+```
 
 ## User Management
 
@@ -120,9 +126,22 @@ Authorization: Bearer jwt_token_here
     "id": 1,
     "name": "Nguyen Van A",
     "email": "example@email.com",
-    "avatar": "url_to_avatar",
+    "avatar_url": "url_to_avatar_image",
+    "is_email_verified": true,
     "created_at": "2024-01-01T00:00:00Z"
   }
+}
+```
+**Response Error: (401)**
+```json
+{
+  "message": "Token không hợp lệ hoặc đã hết hạn."
+}
+```
+**Response Error: (404)**
+```json
+{
+  "message": "Không tìm thấy người dùng."
 }
 ```
 
