@@ -186,6 +186,71 @@ Authorization: Bearer jwt_token_here
 }
 ```
 
+### Reset mật khẩu
+
+```http
+POST /api/auth/request-reset
+```
+
+**Luồng xử lý:**
+1. Kiểm tra xem email có tồn tại trong hệ thống không.
+2. Tạo và gửi một token reset mật khẩu qua email.
+3. Trả về thông báo yêu cầu đặt lại mật khẩu.
+**Request Body:**
+```json
+{
+  "email": "example@email.com"
+}
+```
+
+**Response Success: (200)**
+```json
+{
+  "message": "Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn."
+}
+```
+
+### Đặt lại mật khẩu
+
+```http
+POST /api/auth/reset-password
+```
+
+**Luồng xử lý:**
+1. Giải mã token và xác minh tính hợp lệ.
+2. Cập nhật mật khẩu mới vào cơ sở dữ liệu.
+3. Trả về thông báo thành công.
+**Request Body:**
+```json
+{
+  "token": "reset_token_here",
+  "newPassword": "new_password_here"
+}
+```
+**Response Success: (200)**
+```json
+{
+  "message": "Đặt lại mật khẩu thành công."
+}
+```
+### Xác thực lại email
+
+```http
+GET /api/auth/verify-email
+```
+**Luồng xử lý:**
+1. Kiểm tra xem email đã tồn tại và chưa xác thực.
+2. Gửi lại email xác thực với mã token mới.
+
+**Query Parameters:**
+    email: Địa chỉ email của người dùng cần xác thực lại.
+**Response Success: (200)**
+```json
+{
+  "message": "Email xác thực đã được gửi lại."
+}
+```
+
 ## Goals Management
 
 ### Tạo mục tiêu mới

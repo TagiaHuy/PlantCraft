@@ -14,6 +14,7 @@ router.get('/auth/verify-email', userController.verifyEmail);
 // Password reset routes
 router.post('/auth/request-reset', userController.requestPasswordReset);
 router.post('/auth/reset-password', userController.resetPassword);
+router.get('/auth/verify-email', userController.resendverifyEmail);)
 
 // Protected user routes
 router.get('/user/profile', authenticateToken, userController.getProfile);

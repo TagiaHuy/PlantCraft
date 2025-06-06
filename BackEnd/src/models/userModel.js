@@ -187,4 +187,20 @@ const UserModel = {
   }
 };
 
+/**
+   * Cập nhật mật khẩu của người dùng
+   * @param {number} userId - ID người dùng
+   * @param {string} newPassword - Mật khẩu mới
+   */
+  updatePassword: async (userId, newPassword) => {
+    try {
+      const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
+      const result = await db.query(query, [newPassword, userId]);
+      return result;
+    } catch (error) {
+      console.error('Error updating password:', error);
+      throw new Error('Không thể cập nhật mật khẩu');
+    }
+  },
+
 module.exports = UserModel;

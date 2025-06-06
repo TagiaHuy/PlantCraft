@@ -234,6 +234,7 @@ const UserController = {
     try {
       const { email } = req.body;
 
+      // Check if email invalid
       const user = await UserModel.findByEmail(email);
       if (!user) {
         return res.status(404).json({ message: 'Không tìm thấy tài khoản với email này.' });
@@ -273,9 +274,9 @@ const UserController = {
       const userId = decoded.userId;
 
       // Hash new password
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+      const passwordHash = await bcrypt.hash(newPassword, 10);
 
+      // Update password in database
       await UserModel.updatePassword(userId, passwordHash);
 
       res.json({ message: 'Đặt lại mật khẩu thành công.' });
@@ -285,6 +286,64 @@ const UserController = {
         return res.status(400).json({ message: 'Token không hợp lệ hoặc đã hết hạn.' });
       }
       res.status(500).json({ message: 'Đã có lỗi xảy ra khi đặt lại mật khẩu.' });
+    }
+  },
+
+  /**
+   * Resend verification email
+   */
+  resendVerificationEmail: async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      // Check if email exists in pending registrations
+      const pendingRegistration = await UserModel.findPendingByEmail(email);
+      if (!pendingRegistration) {
+        return res.status(404).json({ message: 'Không tìm thấy thông tin đăng ký với email này.' });
+      }
+
+      // Generate new verification token
+      const verificationToken = jwt.sign(
+        { email },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      // Update pending registration with new token
+      await UserModel.updatePendingRegistrationToken(email, verificationToken);
+
+      // Send verification email
+      const verificationUrl = `${process.env.APP_URL}/verify-email?token=${verificationToken}`;
+      await transporter.sendMail({
+        to: email,
+        subject: 'Xác thực lại email của bạn',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Xác thực lại email của bạn</h2>
+            <p style="color: #666; line-height: 1.6;">
+              Bạn đã yêu cầu gửi lại link xác thực. Vui lòng click vào nút bên dưới để xác thực email của bạn.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background-color: #3498db; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 5px; display: inline-block;">
+                Xác thực email
+              </a>
+            </div>
+            <p style="color: #666; line-height: 1.6;">
+              Nếu bạn không thực hiện đăng ký tài khoản này, vui lòng bỏ qua email này.
+            </p>
+            <p style="color: #999; font-size: 12px; margin-top: 30px;">
+              Link xác thực này sẽ hết hạn sau 24 giờ.
+            </p>
+          </div>
+        `
+      });
+
+      res.json({ message: 'Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư đến của bạn.' });
+    } catch (error) {
+      console.error('Resend verification email error:', error);
+      res.status(500).json({ message: 'Đã có lỗi xảy ra khi gửi lại email xác thực.' });
     }
   },
 
