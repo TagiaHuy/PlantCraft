@@ -148,8 +148,7 @@ const UserController = {
     }
   },
 
-
-  /**   
+  /**
    * User logout
    */
   logout: async (req, res) => {
@@ -292,7 +291,7 @@ const UserController = {
   /**
    * Resend verification email
    */
-  resendVerificationEmail: async (req, res) => {
+  resendverifyEmail: async (req, res) => {
     try {
       const { email } = req.body;
 

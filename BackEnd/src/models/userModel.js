@@ -8,6 +8,9 @@ const bcrypt = require('bcrypt');
  * User model with database operations
  */
 const UserModel = {
+  /**
+   * Tạo người dùng mới và mã hóa mật khẩu
+   */
   createUser: async (userData) => {
     try {
       // Nếu mật khẩu đã được mã hóa, không cần mã hóa lại
@@ -30,6 +33,9 @@ const UserModel = {
     }
   },
 
+  /**
+   * Tìm người dùng theo email
+   */
   findByEmail: async (email) => {
     try {
       const query = 'SELECT * FROM users WHERE email = ?';
@@ -42,44 +48,7 @@ const UserModel = {
   },
 
   /**
-   * Xóa phiên đăng nhập của người dùng khỏi active_sessions
-   * Hoặc thêm token vào blacklist
-   */
-  logoutSession : async (userId, token) => {
-    try {
-      // Xóa phiên đăng nhập khỏi active_sessions
-      const query = 'DELETE FROM active_sessions WHERE token = ?';
-      const result = await db.query(query, [token]);
-      return result;  // Trả về kết quả truy vấn xóa
-    } catch (error) {
-      console.error('Error logging out session:', error);
-      throw new Error('Không thể đăng xuất.');
-    }
-  },
-
-  /**
-   * Lấy thông tin người dùng từ active_sessions
-   * @param {number} userId - ID người dùng
-   * @param {string} token - Token phiên đăng nhập
-   * @returns {Promise<Object>} Thông tin người dùng
-   */
-  getUserByIdAndToken: async (userId, token) => {
-    try {
-      const query = 'SELECT u.id, u.name, u.email, u.avatar_url, u.is_email_verified, u.created_at ' +
-                    'FROM users u JOIN active_sessions s ON u.id = s.user_id WHERE u.id = ? AND s.token = ?';
-      const results = await db.query(query, [userId, token]);
-      return results.length > 0 ? results[0] : null;  // Trả về người dùng đầu tiên tìm thấy
-    } catch (error) {
-      console.error('Error getting user by ID and token:', error);
-      throw new Error('Không thể lấy thông tin người dùng');
-    }
-  },
-
-  /**
-   * Cập nhật thông tin người dùng
-   * @param {number} userId - ID người dùng
-   * @param {Object} updateData - Dữ liệu cập nhật
-   * @returns {Promise<Object>} Kết quả cập nhật
+   * Cập nhật thông tin người dùng (ví dụ: name, avatar_url)
    */
   updateProfile: async (userId, updateData) => {
     try {
@@ -99,13 +68,17 @@ const UserModel = {
     }
   },
 
+  /**
+   * Cập nhật mật khẩu của người dùng (mã hóa mật khẩu mới)
+   */
   updatePassword: async (userId, newPassword) => {
     try {
-      const saltRounds = 10;
+      const saltRounds = 10; // Đặt số vòng mã hóa cho bcrypt
       const passwordHash = await bcrypt.hash(newPassword, saltRounds);  // Mã hóa mật khẩu mới
 
       const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
-      const result = await db.query(query, [passwordHash, userId]);
+      const result = await db.query(query, [passwordHash, userId]); // Cập nhật mật khẩu đã mã hóa vào cơ sở dữ liệu
+
       return result;
     } catch (error) {
       console.error('Error updating password:', error);
@@ -113,6 +86,23 @@ const UserModel = {
     }
   },
 
+  /**
+   * Lấy thông tin người dùng theo ID
+   */
+  getUserById: async (userId) => {
+    try {
+      const query = 'SELECT id, name, email, avatar_url, is_email_verified, created_at FROM users WHERE id = ?';
+      const results = await db.query(query, [userId]);
+      return results[0];  // Trả về người dùng đầu tiên tìm thấy
+    } catch (error) {
+      console.error('Error getting user:', error);
+      throw new Error('Không thể lấy thông tin người dùng');
+    }
+  },
+
+  /**
+   * Xác thực lại email
+   */
   verifyEmail: async (userId) => {
     try {
       const query = 'UPDATE users SET is_email_verified = TRUE WHERE id = ?';
@@ -131,21 +121,37 @@ const UserModel = {
   },
 
   /**
-   * Lấy thông tin người dùng theo ID
-   * @param {number} userId - ID người dùng
-   * @returns {Promise<Object>} Thông tin người dùng
+   * Xóa phiên đăng nhập của người dùng khỏi active_sessions
    */
-  getUserById: async (userId) => {
+  logoutSession: async (userId, token) => {
     try {
-      const query = 'SELECT id, name, email, avatar_url, is_email_verified, created_at FROM users WHERE id = ?';
-      const results = await db.query(query, [userId]);
-      return results[0];  // Trả về người dùng đầu tiên tìm thấy
+      const query = 'DELETE FROM active_sessions WHERE token = ?';
+      const result = await db.query(query, [token]);
+      return result;  // Trả về kết quả truy vấn xóa
     } catch (error) {
-      console.error('Error getting user:', error);
+      console.error('Error logging out session:', error);
+      throw new Error('Không thể đăng xuất.');
+    }
+  },
+
+  /**
+   * Lấy thông tin người dùng từ active_sessions
+   */
+  getUserByIdAndToken: async (userId, token) => {
+    try {
+      const query = 'SELECT u.id, u.name, u.email, u.avatar_url, u.is_email_verified, u.created_at ' +
+                    'FROM users u JOIN active_sessions s ON u.id = s.user_id WHERE u.id = ? AND s.token = ?';
+      const results = await db.query(query, [userId, token]);
+      return results.length > 0 ? results[0] : null;  // Trả về người dùng đầu tiên tìm thấy
+    } catch (error) {
+      console.error('Error getting user by ID and token:', error);
       throw new Error('Không thể lấy thông tin người dùng');
     }
   },
 
+  /**
+   * Kiểm tra đăng ký chờ
+   */
   findPendingByEmail: async (email) => {
     try {
       const query = 'SELECT * FROM pending_registrations WHERE email = ?';
@@ -157,6 +163,9 @@ const UserModel = {
     }
   },
 
+  /**
+   * Tạo đăng ký chờ (dành cho người dùng chưa xác thực email)
+   */
   createPendingRegistration: async (registrationData) => {
     try {
       const query = 'INSERT INTO pending_registrations (name, email, password_hash, verification_token, expires_at) VALUES (?, ?, ?, ?, ?)';
@@ -175,6 +184,9 @@ const UserModel = {
     }
   },
 
+  /**
+   * Xóa đăng ký chờ
+   */
   deletePendingRegistration: async (email) => {
     try {
       const query = 'DELETE FROM pending_registrations WHERE email = ?';
@@ -187,20 +199,5 @@ const UserModel = {
   }
 };
 
-/**
-   * Cập nhật mật khẩu của người dùng
-   * @param {number} userId - ID người dùng
-   * @param {string} newPassword - Mật khẩu mới
-   */
-  updatePassword: async (userId, newPassword) => {
-    try {
-      const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
-      const result = await db.query(query, [newPassword, userId]);
-      return result;
-    } catch (error) {
-      console.error('Error updating password:', error);
-      throw new Error('Không thể cập nhật mật khẩu');
-    }
-  },
-
 module.exports = UserModel;
+
