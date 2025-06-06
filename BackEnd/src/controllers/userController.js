@@ -115,13 +115,13 @@ const UserController = {
       // Find user
       const user = await UserModel.findByEmail(email);
       if (!user) {
-        return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+        return res.status(401).json({ message: 'Email không đúng.' });
       }
 
       // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
       if (!isValidPassword) {
-        return res.status(401).json({ message: 'Email hoặc mật khẩu không đúng.' });
+        return res.status(401).json({ message: 'Mật khẩu không đúng.' });
       }
 
       // Generate token
@@ -218,7 +218,11 @@ const UserController = {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const userId = decoded.userId;
 
-      await UserModel.updatePassword(userId, newPassword);
+      // Hash new password
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+      await UserModel.updatePassword(userId, passwordHash);
 
       res.json({ message: 'Đặt lại mật khẩu thành công.' });
     } catch (error) {
