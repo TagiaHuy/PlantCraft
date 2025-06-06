@@ -9,40 +9,37 @@ Tài liệu này mô tả chi tiết về cấu trúc và quản lý cơ sở d�
 - Character Set: UTF-8
 - Collation: utf8mb4_unicode_ci
 
-### Kết Nối Database
-```javascript
-// Cấu hình trong src/services/db.js
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
-```
-
 ## Cấu Trúc Database
 
 ### Bảng Users
 ```sql
-CREATE TABLE users (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  name VARCHAR(100) NOT NULL,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  avatar VARCHAR(255),
-  email_verified BOOLEAN DEFAULT false,
-  verification_token VARCHAR(255),
-  reset_token VARCHAR(255),
-  reset_token_expires DATETIME,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+-- Bảng users
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) COMMENT 'Tên người dùng',
+    email VARCHAR(100) NOT NULL UNIQUE COMMENT 'Địa chỉ email (không được trùng, không được để trống)',
+    password_hash TEXT COMMENT 'Mã hóa mật khẩu',
+    avatar_url TEXT COMMENT 'URL ảnh đại diện',
+    is_email_verified BOOLEAN DEFAULT FALSE COMMENT 'Email đã xác thực hay chưa',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo tài khoản'
 );
 
+
+-- Table for pending user registrations
+CREATE TABLE pending_registrations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    verification_token VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL
+);
+
+
 -- Indexes
-CREATE INDEX idx_email ON users(email);
+-- CREATE INDEX idx_email ON users(email);
 ```
 
 ### Bảng Goals
