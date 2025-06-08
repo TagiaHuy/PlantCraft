@@ -130,6 +130,7 @@ const UserController = {
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
+      await UserModel.addSession(user.id, token);
 
       res.json({
         message: 'Đăng nhập thành công',
@@ -158,7 +159,8 @@ const UserController = {
         return res.status(400).json({ message: 'Token không hợp lệ.' });
       }
       // Add token to blacklist or handle session invalidation here if needed
-      const result = await UserModel.logoutSession(token);
+      const userId = req.user.id;
+      const result = await UserModel.logoutSession(userId, token);
 
       if (result.affectedRows === 0) {
         return res.status(400).json({ message: 'Không tìm thấy phiên đăng nhập để đăng xuất.' });
