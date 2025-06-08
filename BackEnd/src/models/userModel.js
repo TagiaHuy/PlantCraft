@@ -73,12 +73,10 @@ const UserModel = {
    */
   updatePassword: async (userId, newPassword) => {
     try {
-      const saltRounds = 10; // Đặt số vòng mã hóa cho bcrypt
-      const passwordHash = await bcrypt.hash(newPassword, saltRounds);  // Mã hóa mật khẩu mới
-
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
       const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
-      const result = await db.query(query, [passwordHash, userId]); // Cập nhật mật khẩu đã mã hóa vào cơ sở dữ liệu
-
+      const result = await db.query(query, [passwordHash, userId]);
       return result;
     } catch (error) {
       console.error('Error updating password:', error);
@@ -125,14 +123,15 @@ const UserModel = {
    */
   logoutSession: async (userId, token) => {
     try {
-      const query = 'DELETE FROM active_sessions WHERE token = ?';
-      const result = await db.query(query, [token]);
-      return result;  // Trả về kết quả truy vấn xóa
+      const query = 'DELETE FROM active_sessions WHERE user_id = ? AND token = ?';
+      const result = await db.query(query, [userId, token]);
+      return result;
     } catch (error) {
       console.error('Error logging out session:', error);
       throw new Error('Không thể đăng xuất.');
     }
-  },
+  },  // Trả về kết quả truy vấn xóa
+  
 
   /**
    * Lấy thông tin người dùng từ active_sessions
@@ -196,8 +195,24 @@ const UserModel = {
       console.error('Error deleting pending registration:', error);
       throw new Error('Không thể xóa đăng ký chờ');
     }
+  },
+
+
+
+  /**
+   * Thêm phiên đăng nhập mới vào active_sessions
+   */
+  addSession: async (userId, token) => {
+    try {
+      const query = 'INSERT INTO active_sessions (user_id, token) VALUES (?, ?)';
+      const result = await db.query(query, [userId, token]);
+      return result;
+    } catch (error) {
+      console.error('Error adding session:', error);
+      throw new Error('Không thể thêm phiên đăng nhập');
+    }
   }
+
 };
 
 module.exports = UserModel;
-
