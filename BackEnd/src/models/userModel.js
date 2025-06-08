@@ -73,10 +73,12 @@ const UserModel = {
    */
   updatePassword: async (userId, newPassword) => {
     try {
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+      const saltRounds = 10; // Đặt số vòng mã hóa cho bcrypt
+      const passwordHash = await bcrypt.hash(newPassword, saltRounds);  // Mã hóa mật khẩu mới
+
       const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
-      const result = await db.query(query, [passwordHash, userId]);
+      const result = await db.query(query, [passwordHash, userId]); // Cập nhật mật khẩu đã mã hóa vào cơ sở dữ liệu
+
       return result;
     } catch (error) {
       console.error('Error updating password:', error);
@@ -123,15 +125,14 @@ const UserModel = {
    */
   logoutSession: async (userId, token) => {
     try {
-      const query = 'DELETE FROM active_sessions WHERE user_id = ? AND token = ?';
-      const result = await db.query(query, [userId, token]);
-      return result;
+      const query = 'DELETE FROM active_sessions WHERE token = ?';
+      const result = await db.query(query, [token]);
+      return result;  // Trả về kết quả truy vấn xóa
     } catch (error) {
       console.error('Error logging out session:', error);
       throw new Error('Không thể đăng xuất.');
     }
-  },  // Trả về kết quả truy vấn xóa
-  
+  },
 
   /**
    * Lấy thông tin người dùng từ active_sessions
@@ -197,22 +198,38 @@ const UserModel = {
     }
   },
 
-
-
   /**
-   * Thêm phiên đăng nhập mới vào active_sessions
+   * Thêm session khi người dùng đăng nhập
    */
   addSession: async (userId, token) => {
     try {
-      const query = 'INSERT INTO active_sessions (user_id, token) VALUES (?, ?)';
+      const query = 'INSERT INTO active_sessions (user_id, token, login_time) VALUES (?, ?, NOW())';
       const result = await db.query(query, [userId, token]);
       return result;
     } catch (error) {
       console.error('Error adding session:', error);
-      throw new Error('Không thể thêm phiên đăng nhập');
+      throw new Error('Không thể tạo session');
+    }
+  },
+
+  /**
+   * Danh sách các user đang hoạt động
+   */
+  listActiveSessions: async () => {
+    try {
+      const query = `
+        SELECT s.id, u.id AS user_id, u.name, u.email, s.login_time
+        FROM active_sessions s
+        JOIN users u ON s.user_id = u.id
+        ORDER BY s.login_time DESC
+      `;
+      const results = await db.query(query);
+      return results;
+    } catch (error) {
+      console.error('Error listing active sessions:', error);
+      throw new Error('Không thể lấy danh sách phiên đăng nhập');
     }
   }
-
 };
 
 module.exports = UserModel;

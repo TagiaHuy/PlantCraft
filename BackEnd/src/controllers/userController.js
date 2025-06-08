@@ -19,6 +19,19 @@ const transporter = nodemailer.createTransport({
 
 const UserController = {
   /**
+   * Danh sách các user đang đăng nhập
+   */
+  listActiveSessions: async (req, res) => {
+    try {
+      const sessions = await UserModel.listActiveSessions();
+      res.json({ sessions });
+    } catch (error) {
+      console.error('List active sessions error:', error);
+      res.status(500).json({ message: 'Không thể lấy danh sách phiên đăng nhập.' });
+    }
+  },
+
+  /**
    * User registration
    */
   register: async (req, res) => {
@@ -130,7 +143,6 @@ const UserController = {
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
-      await UserModel.addSession(user.id, token);
 
       res.json({
         message: 'Đăng nhập thành công',
@@ -159,8 +171,7 @@ const UserController = {
         return res.status(400).json({ message: 'Token không hợp lệ.' });
       }
       // Add token to blacklist or handle session invalidation here if needed
-      const userId = req.user.id;
-      const result = await UserModel.logoutSession(userId, token);
+      const result = await UserModel.logoutSession(token);
 
       if (result.affectedRows === 0) {
         return res.status(400).json({ message: 'Không tìm thấy phiên đăng nhập để đăng xuất.' });

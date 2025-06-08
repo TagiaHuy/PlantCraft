@@ -1,23 +1,25 @@
+// Import controller và middleware
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
-
-// Import middleware
+const UserController = require('../controllers/userController');
 const { authenticateToken } = require('../middleware/auth');
 
-// Route register and login
-router.post('/auth/register', userController.register);
-router.post('/auth/login', userController.login);
-router.post('/auth/logout', authenticateToken, userController.logout);
-router.get('/auth/verify-email', userController.verifyEmail);
+// Auth routes
+router.post('/auth/register', UserController.register);
+router.post('/auth/login', UserController.login);
+router.post('/auth/logout', authenticateToken, UserController.logout);
+router.get('/auth/verify-email', UserController.verifyEmail);
+router.post('/auth/resend-verification', UserController.resendverifyEmail); // ✅ sửa route
 
-// Password reset routes
-router.post('/auth/request-reset', userController.requestPasswordReset);
-router.post('/auth/reset-password', userController.resetPassword);
-router.post('/auth/resend-verification', userController.resendverifyEmail);
+// Password reset
+router.post('/auth/request-reset', UserController.requestPasswordReset);
+router.post('/auth/reset-password', UserController.resetPassword);
 
-// Protected user routes
-router.get('/user/profile', authenticateToken, userController.getProfile);
-router.put('/user/profile', authenticateToken, userController.updateProfile);
+// User profile
+router.get('/user/profile', authenticateToken, UserController.getProfile);
+router.put('/user/profile', authenticateToken, UserController.updateProfile);
+
+// Admin: list sessions
+router.get('/admin/active-users', authenticateToken, UserController.listActiveSessions);
 
 module.exports = router;
