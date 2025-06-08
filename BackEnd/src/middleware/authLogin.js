@@ -1,11 +1,10 @@
-// Authentication middleware
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
 
 /**
- * Middleware to verify JWT token and attach user to request
+ * Middleware để xác thực JWT token khi người dùng đăng nhập
  */
-const authenticateToken = async (req, res, next) => {
+const authenticateLogin = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer token
@@ -14,7 +13,7 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ message: 'Vui lòng đăng nhập.' });
     }
 
-    // Verify token
+    // Giải mã token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Kiểm tra xem token có chứa userId không
@@ -53,6 +52,6 @@ const requireEmailVerified = (req, res, next) => {
 };
 
 module.exports = {
-  authenticateToken,
+  authenticateToken: authenticateLogin,
   requireEmailVerified
 };

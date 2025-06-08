@@ -3,15 +3,19 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const taskController = require('../controllers/taskController');
 
-const { authenticateToken, requireEmailVerified } = require('../middleware/auth');
+// Import middleware
+const { authenticateToken } = require('../middleware/auth');
 
+// Route register and login
 router.post('/auth/register', userController.register);
 router.post('/auth/login', userController.login);
+router.post('/auth/logout', authenticateToken, userController.logout);
 router.get('/auth/verify-email', userController.verifyEmail);
 
 // Password reset routes
 router.post('/auth/request-reset', userController.requestPasswordReset);
 router.post('/auth/reset-password', userController.resetPassword);
+router.get('/auth/verify-email', userController.resendverifyEmail);
 
 // Protected user routes
 router.get('/user/profile', authenticateToken, userController.getProfile);
