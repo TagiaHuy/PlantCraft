@@ -144,6 +144,9 @@ const UserController = {
         { expiresIn: '24h' }
       );
 
+      
+      await UserModel.addSession(user.id, token);
+      console.log('[LOGIN] Đã gọi addSession');
       res.json({
         message: 'Đăng nhập thành công',
         token,
@@ -423,7 +426,30 @@ const UserController = {
       console.error('Get profile error:', error);
       res.status(500).json({ message: 'Đã có lỗi xảy ra khi lấy thông tin người dùng.' });
     }
+  },
+
+  /**
+ * Change password
+ */
+  changePassword: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { newPassword } = req.body;
+
+      if (!newPassword) {
+        return res.status(400).json({ message: 'Mật khẩu mới không được để trống.' });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await UserModel.updatePassword(userId, passwordHash);
+
+      res.json({ message: 'Đổi mật khẩu thành công.' });
+    } catch (error) {
+      console.error('Change password error:', error);
+      res.status(500).json({ message: 'Không thể đổi mật khẩu.' });
+    }
   }
 };
+
 
 module.exports = UserController;

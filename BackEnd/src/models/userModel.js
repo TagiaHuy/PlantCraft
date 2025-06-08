@@ -26,7 +26,8 @@ const UserModel = {
       const params = [userData.name, userData.email, passwordHash];
       const result = await db.query(query, params);
 
-      return result;  // Trả về kết quả với insertId
+      console.log('[addSession] Thành công:', result);
+    return result;  // Trả về kết quả với insertId
     } catch (error) {
       console.error('Error creating user:', error);
       throw new Error('Không thể tạo người dùng');
@@ -79,7 +80,8 @@ const UserModel = {
       const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
       const result = await db.query(query, [passwordHash, userId]); // Cập nhật mật khẩu đã mã hóa vào cơ sở dữ liệu
 
-      return result;
+      console.log('[addSession] Thành công:', result);
+    return result;
     } catch (error) {
       console.error('Error updating password:', error);
       throw new Error('Không thể cập nhật mật khẩu');
@@ -113,7 +115,8 @@ const UserModel = {
       }
 
       const result = await db.query(query, [userId]);
-      return result;  // Trả về kết quả cập nhật
+      console.log('[addSession] Thành công:', result);
+    return result;  // Trả về kết quả cập nhật
     } catch (error) {
       console.error('Error verifying email:', error);
       throw new Error('Không thể xác thực email');
@@ -123,11 +126,13 @@ const UserModel = {
   /**
    * Xóa phiên đăng nhập của người dùng khỏi active_sessions
    */
-  logoutSession: async (userId, token) => {
+  logoutSession: async (token) => {
     try {
-      const query = 'DELETE FROM active_sessions WHERE token = ?';
+      console.log('[logoutSession] Xóa session với token:', token);
+      const query = 'UPDATE active_sessions SET logout_time = NOW() WHERE token = ? AND logout_time IS NULL';
       const result = await db.query(query, [token]);
-      return result;  // Trả về kết quả truy vấn xóa
+      console.log('[logoutSession] Kết quả:', result);
+      return result;
     } catch (error) {
       console.error('Error logging out session:', error);
       throw new Error('Không thể đăng xuất.');
@@ -177,7 +182,8 @@ const UserModel = {
         registrationData.expiresAt
       ];
       const result = await db.query(query, params);
-      return result;
+      console.log('[addSession] Thành công:', result);
+    return result;
     } catch (error) {
       console.error('Error creating pending registration:', error);
       throw new Error('Không thể tạo đăng ký chờ');
@@ -191,7 +197,8 @@ const UserModel = {
     try {
       const query = 'DELETE FROM pending_registrations WHERE email = ?';
       const result = await db.query(query, [email]);
-      return result;
+      console.log('[addSession] Thành công:', result);
+    return result;
     } catch (error) {
       console.error('Error deleting pending registration:', error);
       throw new Error('Không thể xóa đăng ký chờ');
@@ -203,9 +210,11 @@ const UserModel = {
    */
   addSession: async (userId, token) => {
     try {
-      const query = 'INSERT INTO active_sessions (user_id, token, login_time) VALUES (?, ?, NOW())';
+      console.log('[addSession] Ghi session:', userId, token);
+    const query = 'INSERT INTO active_sessions (user_id, token, login_time) VALUES (?, ?, NOW())';
       const result = await db.query(query, [userId, token]);
-      return result;
+      console.log('[addSession] Thành công:', result);
+    return result;
     } catch (error) {
       console.error('Error adding session:', error);
       throw new Error('Không thể tạo session');
@@ -221,6 +230,7 @@ const UserModel = {
         SELECT s.id, u.id AS user_id, u.name, u.email, s.login_time
         FROM active_sessions s
         JOIN users u ON s.user_id = u.id
+        WHERE s.logout_time IS NULL
         ORDER BY s.login_time DESC
       `;
       const results = await db.query(query);
