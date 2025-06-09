@@ -1,6 +1,4 @@
-// auth.js
 // Authentication middleware
-
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
 
@@ -10,7 +8,7 @@ const UserModel = require('../models/userModel');
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer token
 
     if (!token) {
       return res.status(401).json({ message: 'Vui lòng đăng nhập.' });
@@ -18,14 +16,19 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Get user
+
+    // Kiểm tra xem token có chứa userId không
+    if (!decoded || !decoded.userId) {
+      return res.status(401).json({ message: 'Token không hợp lệ.' });
+    }
+
+    // Tìm người dùng trong cơ sở dữ liệu
     const user = await UserModel.getUserById(decoded.userId);
     if (!user) {
       return res.status(401).json({ message: 'Người dùng không tồn tại.' });
     }
 
-    // Attach user to request
+    // Gắn thông tin người dùng vào req
     req.user = user;
     next();
   } catch (error) {
@@ -38,12 +41,12 @@ const authenticateToken = async (req, res, next) => {
 };
 
 /**
- * Middleware to verify email is verified
+ * Middleware để xác thực email đã được xác thực
  */
 const requireEmailVerified = (req, res, next) => {
   if (!req.user.is_email_verified) {
     return res.status(403).json({ 
-      message: 'Vui lòng xác thực email trước khi thực hiện thao tác này.'
+      message: 'Vui lòng xác thực email trước khi thực hiện thao tác này.' 
     });
   }
   next();
