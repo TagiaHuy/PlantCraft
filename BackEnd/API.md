@@ -275,6 +275,7 @@ POST /api/goals
 Authorization: Bearer jwt_token_here
 ```
 
+
 **Request Body:**
 ```json
 {
