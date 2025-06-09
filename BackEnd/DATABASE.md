@@ -95,13 +95,7 @@ CREATE TABLE tasks (
   description TEXT,
   deadline DATETIME NOT NULL,
   priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
-  status ENUM('pending', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
-  completed_at DATETIME,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE SET NULL,
-  FOREIGN KEY (phase_id) REFERENCES goal_phases(id) ON DELETE SET NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  status ENUM('pending', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending'
 );
 
 -- Indexes
