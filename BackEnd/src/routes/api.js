@@ -17,8 +17,8 @@ router.post('/auth/reset-password', userController.resetPassword);
 router.get('/user/profile', authenticateToken, userController.getProfile);
 router.put('/user/profile', authenticateToken, userController.updateProfile);
 
-// new task - thêm authenticateToken middleware
-router.post('/tasks', authenticateToken, taskController.createTask);
+// new task
+router.post('/tasks', taskController.createTask);
 // router.get('/tasks', taskController.getTasks);
 // router.get('/tasks/:id', taskController.getTaskById);
 // router.put('/tasks/:id', taskController.updateTask);

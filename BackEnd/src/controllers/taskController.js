@@ -41,8 +41,7 @@ const TaskModel = require('../models/taskModel');
 const TaskController = {
     createTask: async (req, res) => {
         try {
-            const { goal_id, phase_id, title, description, deadline, priority } = req.body;
-            const user_id = req.user.id; // Lấy user_id từ token đã xác thực
+            const { goal_id, phase_id, user_id, title, description, deadline, priority, status } =  req.body;
             const task = await TaskModel.createTask({
                 goal_id,
                 phase_id,
