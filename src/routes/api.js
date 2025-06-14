@@ -21,7 +21,7 @@ router.post('/auth/reset-password', userController.resetPassword);
 router.get('/user/profile', authenticateToken, userController.getProfile);
 router.put('/user/profile', authenticateToken, userController.updateProfile);
 
-// Goal routes
+// Goal routes rizzS
 router.post('/goals', authenticateToken, GoalController.createGoal);
 router.get('/goals', authenticateToken, GoalController.getGoals);
 router.get('/goals/:goalId', authenticateToken, GoalController.getGoalById);
