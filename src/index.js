@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const bodyParser = require('body-parser');
 const apiRoutes = require('./routes/api');
 const dbService = require('./services/db');
 
@@ -74,7 +73,3 @@ process.on('SIGINT', async () => {
     process.exit(0);  // Exit the process after everything is closed
   });
 });
-
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));

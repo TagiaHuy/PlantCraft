@@ -1,5 +1,4 @@
 // Authentication middleware
-
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
 
@@ -8,7 +7,6 @@ const UserModel = require('../models/userModel');
  */
 const authenticateToken = async (req, res, next) => {
   try {
-    // Lấy token từ header Authorization
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer token
 
@@ -35,13 +33,9 @@ const authenticateToken = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Authentication error:', error);
-
-    // Nếu token không hợp lệ hoặc đã hết hạn
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn.' });
     }
-
-    // Các lỗi khác
     res.status(500).json({ message: 'Đã có lỗi xảy ra khi xác thực.' });
   }
 };

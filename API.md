@@ -170,7 +170,7 @@ Authorization: Bearer jwt_token_here
 ```json
 {
   "name": "Nguyen Van A Updated",
-  "avatar": "base64_image_string_or_file_here"
+  "avatar": "base64_image_string"
 }
 ```
 
@@ -183,12 +183,6 @@ Authorization: Bearer jwt_token_here
     "name": "Nguyen Van A Updated",
     "avatar": "new_avatar_url"
   }
-}
-```
-**Response Error: (400)**
-```json
-{
-  "message": "Định dạng ảnh không hợp lệ"
 }
 ```
 
@@ -266,45 +260,45 @@ POST /api/goals
 ```
 
 **Luồng xử lý:**
-1. Xác thực JWT Token:
-  - Lấy Authorization từ header của request.
-  - Kiểm tra token có hợp lệ không. Nếu không, trả về lỗi 401 Unauthorized.
-
-2. Kiểm tra và xử lý dữ liệu đầu vào:
-  - Kiểm tra các trường name, description, deadline, priority có tồn tại và hợp lệ.
-  - Đảm bảo rằng deadline là một ngày hợp lệ.
-
-3. Lưu mục tiêu vào cơ sở dữ liệu:
-  - Tạo mục tiêu mới trong cơ sở dữ liệu với các trường: name, description, deadline, priority, user_id (lấy từ token).
-
-4. Trả về thông tin mục tiêu:
-  - Trả về thông tin mục tiêu mới được tạo, bao gồm các trường dữ liệu đã nhập và created_at.
+1. Xác thực JWT token từ header
+2. Kiểm tra tính hợp lệ của dữ liệu đầu vào:
+   - Kiểm tra các trường bắt buộc
+   - Validate định dạng ngày tháng
+   - Kiểm tra start_date < end_date
+   - Validate priority trong danh sách cho phép
+3. Tạo mục tiêu mới trong database với status mặc định là "in_progress"
+4. Tạo các phase mặc định cho mục tiêu (nếu có)
+5. Trả về thông tin mục tiêu đã tạo
 
 **Headers:**
 ```
 Authorization: Bearer jwt_token_here
 ```
 
+
 **Request Body:**
 ```json
 {
-  "name": "Học lập trình Node.js",
-  "description": "Học lập trình Node.js trong 3 tháng.",
-  "deadline": "2024-12-31",
-  "priority": "High"
+  "title": "Học lập trình mobile",
+  "description": "Hoàn thành khóa học React Native",
+  "start_date": "2024-01-01",
+  "end_date": "2024-06-30",
+  "priority": "high"
 }
 ```
 
-**Response Success: (200)**
+**Response Success: (201)**
 ```json
 {
+  "message": "Tạo mục tiêu thành công",
   "goal": {
     "id": 1,
-    "name": "Học lập trình Node.js",
-    "description": "Học lập trình Node.js trong 3 tháng.",
-    "deadline": "2024-12-31",
-    "priority": "High",
-    "created_at": "2024-06-01"
+    "title": "Học lập trình mobile",
+    "description": "Hoàn thành khóa học React Native",
+    "start_date": "2024-01-01",
+    "end_date": "2024-06-30",
+    "priority": "high",
+    "status": "in_progress"
   }
 }
 ```
@@ -316,51 +310,15 @@ GET /api/goals
 ```
 
 **Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Truy vấn danh sách mục tiêu của người dùng từ cơ sở dữ liệu.
-3. Trả về danh sách mục tiêu.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Query Parameters:**
-- `status`: Lọc theo trạng thái (in_progress, completed, cancelled)
-- `priority`: Lọc theo độ ưu tiên (high, medium, low)
-- `page`: Số trang (mặc định: 1)
-- `limit`: Số mục tiêu mỗi trang (mặc định: 10)
-
-**Response Success: (200)**
-```json
-[
-  {
-    "id": 1,
-    "name": "Học lập trình Node.js",
-    "deadline": "2024-12-31",
-    "priority": "High",
-    "status": "In Progress"
-  },
-  {
-    "id": 2,
-    "name": "Giảm cân",
-    "deadline": "2024-09-30",
-    "priority": "Medium",
-    "status": "Not Started"
-  }
-]
-```
-
-### Lấy thông tin chi tiết much tiêu
-
-```http
-GET /api/goals/{goalId}
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Truy vấn thông tin chi tiết mục tiêu từ cơ sở dữ liệu.
-3. Trả về thông tin chi tiết mục tiêu.
+1. Xác thực JWT token từ header
+2. Xử lý các tham số lọc và phân trang:
+   - Validate các giá trị status và priority
+   - Xử lý page size và page number
+3. Truy vấn database với các điều kiện lọc
+4. Tính toán tiến độ cho mỗi mục tiêu:
+   - Lấy số lượng tasks đã hoàn thành
+   - Tính phần trăm hoàn thành
+5. Định dạng và trả về kết quả
 
 **Headers:**
 ```
@@ -376,247 +334,21 @@ Authorization: Bearer jwt_token_here
 **Response Success: (200)**
 ```json
 {
-  "goal": {
-    "id": 1,
-    "name": "Học lập trình Node.js",
-    "description": "Học lập trình Node.js trong 3 tháng.",
-    "deadline": "2024-12-31",
-    "priority": "High",
-    "status": "In Progress",
-    "progress": "50%",
-    "created_at": "2024-06-01"
-  }
-}
-```
-
-**Response Error: (404)**
-```json
-{
-  "message": "Không tìm thấy mục tiêu."
-}
-```
-
-### Cập nhật thông tin mục tiêu
-```http
-PUT /api/goals/{goalId}
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Kiểm tra và xử lý dữ liệu đầu vào (name, description, deadline, priority).
-3. Cập nhật thông tin mục tiêu trong cơ sở dữ liệu.
-4. Trả về thông tin đã cập nhật.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Request Body:**
-
-```json
-{
-  "name": "Học lập trình Node.js nâng cao",
-  "description": "Học Node.js nâng cao với các kỹ thuật tiên tiến.",
-  "deadline": "2025-01-01",
-  "priority": "High"
-}
-```
-**Response Success: (200)**
-```json
-{
-  "message": "Cập nhật thông tin mục tiêu thành công.",
-  "goal": {
-    "id": 1,
-    "name": "Học lập trình Node.js nâng cao",
-    "description": "Học Node.js nâng cao với các kỹ thuật tiên tiến.",
-    "deadline": "2025-01-01",
-    "priority": "High"
-  }
-}
-```
-**Response Error: (404)**
-```json
-{
-  "message": "Không tìm thấy mục tiêu."
-}
-```
-
-### Cập nhật tiến độ mục tiêu
-```http
-PUT /api/goals/{goalId}/progress
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Kiểm tra quyền truy cập của người dùng đối với mục tiêu.
-3. Cập nhật tiến độ mục tiêu trong cơ sở dữ liệu.
-4. Trả về kết quả đánh giá mục tiêu đã cập nhật.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Request Body:**
-
-```json
-{
-  "progress": "70%"
-}
-```
-**Response Success: (200)**
-```json
-{
-  "message": "Cập nhật tiến độ mục tiêu thành công.",
-  "goal": {
-    "id": 1,
-    "name": "Học lập trình Node.js",
-    "progress": "70%"
-  }
-}
-```
-
-### Đánh giá kết quả mục tiêu
-```http
-PUT /api/goals/{goalId}/result
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Kiểm tra quyền truy cập của người dùng đối với mục tiêu.
-3. Cập nhật kết quả mục tiêu trong cơ sở dữ liệu (hoàn thành hoặc không hoàn thành).
-4. Trả về tiến độ đã cập nhật.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Request Body:**
-
-```json
-{
-  "result": "Completed"
-}
-```
-**Response Success: (200)**
-```json
-{
-  "message": "Đánh giá kết quả mục tiêu thành công.",
-  "goal": {
-    "id": 1,
-    "result": "Completed"
-  }
-}
-```
-
-### Xóa mục tiêu
-```http
-DELETE /api/goals/{goalId}
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Kiểm tra quyền truy cập của người dùng đối với mục tiêu.
-3. Xóa mục tiêu khỏi cơ sở dữ liệu.
-4. Trả về thông báo thành công.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Response Success: (200)**
-```json
-{
-  "message": "Xóa mục tiêu thành công."
-}
-```
-
-### Lấy danh sách mục tiêu đã hoàn thành
-```http
-GET /api/goals/completed
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Truy vấn danh sách các mục tiêu đã hoàn thành từ cơ sở dữ liệu.
-3. Trả về danh sách các mục tiêu đã hoàn thành.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Response Success: (200)**
-```json
-[
-  {
-    "id": 1,
-    "name": "Học lập trình Node.js",
-    "status": "Completed"
-  }
-]
-```
-
-### Tạo nhóm mục tiêu
-```http
-POST /api/goals/groups
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Kiểm tra và xử lý dữ liệu đầu vào (group name, description).
-3. Tạo nhóm mục tiêu mới trong cơ sở dữ liệu.
-4. Trả về thông tin nhóm mục tiêu mới.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Request Body:**
-
-```json
-{
-  "name": "Nhóm học Node.js",
-  "description": "Nhóm học tập về Node.js cho các lập trình viên mới."
-}
-```
-**Response Success: (200)**
-```json
-{
-  "group": {
-    "id": 1,
-    "name": "Nhóm học Node.js",
-    "description": "Nhóm học tập về Node.js cho các lập trình viên mới."
-  }
-}
-```
-
-### Thống kê tiến độ mục tiêu
-```http
-GET /api/goals/stats
-```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header.
-2. Truy vấn tiến độ các mục tiêu từ cơ sở dữ liệu.
-3. Trả về thống kê tiến độ các mục tiêu.
-
-**Headers:**
-```
-Authorization: Bearer jwt_token_here
-```
-
-**Response Success: (200)**
-```json
-{
-  "totalGoals": 10,
-  "completedGoals": 5,
-  "inProgressGoals": 3,
-  "notStartedGoals": 2
+  "goals": [
+    {
+      "id": 1,
+      "title": "Học lập trình mobile",
+      "description": "Hoàn thành khóa học React Native",
+      "start_date": "2024-01-01",
+      "end_date": "2024-06-30",
+      "priority": "high",
+      "status": "in_progress",
+      "progress": 45
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "total_pages": 1
 }
 ```
 

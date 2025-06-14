@@ -5,38 +5,6 @@ const UserModel = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const cloudinary = require('cloudinary').v2;
-
-// Cấu hình Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-// Hàm upload ảnh lên Cloudinary
-const uploadAvatarToCloud = async (base64Image) => {
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload(base64Image, { folder: 'avatars' }, (error, result) => {
-      if (error) {
-        reject('Lỗi tải ảnh lên Cloudinary');
-      } else {
-        resolve(result.url);  // Trả về URL của ảnh đã tải lên
-      }
-    });
-  });
-};
-
-// Hàm kiểm tra định dạng và kích thước ảnh
-validateAvatar: (avatar) => {
-  const allowedFormats = ['image/jpeg', 'image/png'];
-  if (!allowedFormats.includes(avatar.mimetype)) {
-    throw new Error('Định dạng ảnh không hợp lệ');
-  }
-  if (avatar.size > 5000000) {  // 5MB
-    throw new Error('Kích thước ảnh vượt quá giới hạn cho phép');
-  }
-};
 
 // Email configuration
 const transporter = nodemailer.createTransport({
@@ -48,26 +16,6 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS
   }
 });
-
-// Helper functions for validation
-const validateEmail = (email) => {
-  const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-  return regex.test(email);
-};
-
-const validatePassword = (password) => {
-  return password.length >= 8;  // Mật khẩu ít nhất 8 ký tự
-};
-
-const validateAvatar = (avatar) => {
-  const allowedFormats = ['image/jpeg', 'image/png'];
-  if (!allowedFormats.includes(avatar.mimetype)) {
-    throw new Error('Định dạng ảnh không hợp lệ');
-  }
-  if (avatar.size > 5000000) {  // 5MB
-    throw new Error('Kích thước ảnh vượt quá giới hạn cho phép');
-  }
-};
 
 const UserController = {
   /**
@@ -93,10 +41,6 @@ const UserController = {
       // Validate input
       if (!name || !email || !password) {
         return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin.' });
-      }
-
-      if (!validateEmail(email) || !validatePassword(password)) {
-        return res.status(400).json({ message: 'Dữ liệu không hợp lệ.' });
       }
 
       // Check if email already exists in users table
@@ -200,6 +144,9 @@ const UserController = {
         { expiresIn: '24h' }
       );
 
+      
+      await UserModel.addSession(user.id, token);
+      console.log('[LOGIN] Đã gọi addSession');
       res.json({
         message: 'Đăng nhập thành công',
         token,
@@ -247,12 +194,14 @@ const UserController = {
   getProfile: async (req, res) => {
     try {
       const userId = req.user.id; // From auth middleware
+      // Get user information from database
       const user = await UserModel.getUserById(userId);
 
       if (!user) {
         return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
       }
 
+      // Return user information
       res.json({
         user: {
           id: user.id,
@@ -273,36 +222,13 @@ const UserController = {
    */
   updateProfile: async (req, res) => {
     try {
-      const userId = req.user.id; // Lấy thông tin người dùng từ JWT token
-      const { name, avatar } = req.body;  // avatar có thể là base64 hoặc file
+      const userId = req.user.id; // From auth middleware
+      const { name, avatarUrl } = req.body;
 
       if (!name) {
         return res.status(400).json({ message: 'Tên không được để trống.' });
       }
 
-      // Nếu có avatar:
-      let avatarUrl = null;
-      if (avatar) {
-        // Kiểm tra nếu avatar là base64
-        if (avatar.startsWith('data:image')) {
-          // Nếu là base64, gọi hàm upload lên cloud (ví dụ Cloudinary)
-          try {
-            avatarUrl = await uploadAvatarToCloud(avatar);  // uploadAvatarToCloud là hàm xử lý upload ảnh base64
-          } catch (error) {
-            return res.status(400).json({ message: 'Lỗi khi tải ảnh lên.' });
-          }
-        } else {
-          // Nếu là file, kiểm tra và tải lên
-          try {
-            validateAvatar(avatar);  // Kiểm tra avatar nếu là file (định dạng và kích thước)
-            avatarUrl = await uploadAvatarToCloud(avatar);  // Upload file lên cloud
-          } catch (error) {
-            return res.status(400).json({ message: error.message });
-          }
-        }
-      }
-
-      // Cập nhật thông tin người dùng trong cơ sở dữ liệu
       await UserModel.updateProfile(userId, { name, avatarUrl });
       const updatedUser = await UserModel.getUserById(userId);
 
@@ -406,7 +332,27 @@ const UserController = {
       await transporter.sendMail({
         to: email,
         subject: 'Xác thực lại email của bạn',
-        html: `...`
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Xác thực lại email của bạn</h2>
+            <p style="color: #666; line-height: 1.6;">
+              Bạn đã yêu cầu gửi lại link xác thực. Vui lòng click vào nút bên dưới để xác thực email của bạn.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background-color: #3498db; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 5px; display: inline-block;">
+                Xác thực email
+              </a>
+            </div>
+            <p style="color: #666; line-height: 1.6;">
+              Nếu bạn không thực hiện đăng ký tài khoản này, vui lòng bỏ qua email này.
+            </p>
+            <p style="color: #999; font-size: 12px; margin-top: 30px;">
+              Link xác thực này sẽ hết hạn sau 24 giờ.
+            </p>
+          </div>
+        `
       });
 
       res.json({ message: 'Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư đến của bạn.' });
@@ -480,7 +426,30 @@ const UserController = {
       console.error('Get profile error:', error);
       res.status(500).json({ message: 'Đã có lỗi xảy ra khi lấy thông tin người dùng.' });
     }
+  },
+
+  /**
+ * Change password
+ */
+  changePassword: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { newPassword } = req.body;
+
+      if (!newPassword) {
+        return res.status(400).json({ message: 'Mật khẩu mới không được để trống.' });
+      }
+
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await UserModel.updatePassword(userId, passwordHash);
+
+      res.json({ message: 'Đổi mật khẩu thành công.' });
+    } catch (error) {
+      console.error('Change password error:', error);
+      res.status(500).json({ message: 'Không thể đổi mật khẩu.' });
+    }
   }
 };
+
 
 module.exports = UserController;
