@@ -158,7 +158,7 @@ PUT /api/user/profile
    - Kiểm tra định dạng và kích thước file
    - Upload ảnh lên cloud storage
    - Lưu URL ảnh vào database
-4. Cập nhật thông tin người dùng trong database
+4. Cập nhật thông tin người dùng trong database, lưu lại lịch sử thay đổi thông tin cá nhân
 5. Trả về thông tin đã cập nhật
 
 **Headers:**
@@ -170,7 +170,7 @@ Authorization: Bearer jwt_token_here
 ```json
 {
   "name": "Nguyen Van A Updated",
-  "avatar": "base64_image_string_or_file_here"
+  "avatarUrl": "base64_image_string_or_file_here"
 }
 ```
 
@@ -351,7 +351,7 @@ Authorization: Bearer jwt_token_here
 ]
 ```
 
-### Lấy thông tin chi tiết much tiêu
+### Lấy thông tin chi tiết mục tiêu
 
 ```http
 GET /api/goals/{goalId}
@@ -462,7 +462,7 @@ Authorization: Bearer jwt_token_here
 
 ```json
 {
-  "progress": "70%"
+  "progress": 70
 }
 ```
 **Response Success: (200)**

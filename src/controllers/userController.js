@@ -1,6 +1,7 @@
 // userController.js
 // Controller for user-related operations
 
+const db = require('../services/db');  // Import db service
 const UserModel = require('../models/userModel');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -176,39 +177,42 @@ const UserController = {
     try {
       const { email, password } = req.body;
 
-      // Validate input
-      if (!email || !password) {
-        return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin.' });
+      const user = await UserModel.findByEmail(email);
+      
+      // Kiểm tra xác thực email
+      if (!user || !user.is_email_verified) {
+        return res.status(401).json({ message: 'Email chưa được xác thực hoặc không tồn tại.' });
       }
 
-      // Find user
-      const user = await UserModel.findByEmail(email);
+      // Kiểm tra email và mật khẩu
       if (!user) {
         return res.status(401).json({ message: 'Email không đúng.' });
       }
 
-      // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
       if (!isValidPassword) {
         return res.status(401).json({ message: 'Mật khẩu không đúng.' });
       }
 
-      // Generate token
-      const token = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      // Tạo JWT token
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
+      // Cập nhật phiên đăng nhập trong active_sessions
+      const expiredAt = new Date();
+      expiredAt.setHours(expiredAt.getHours() + 24); // Token hết hạn sau 24h
+
+      // Lưu token vào active_sessions với thời gian hết hạn
+      const insertQuery = 'INSERT INTO active_sessions (user_id, token, expired_at, status) VALUES (?, ?, ?, ?)';
+      await db.query(insertQuery, [user.id, token, expiredAt, 'active']);
+
+      // Trả về response với token
       res.json({
         message: 'Đăng nhập thành công',
         token,
         user: {
           id: user.id,
           name: user.name,
-          email: user.email,
-          avatarUrl: user.avatar_url,
-          isEmailVerified: user.is_email_verified
+          email: user.email
         }
       });
     } catch (error) {
@@ -222,19 +226,25 @@ const UserController = {
    */
   logout: async (req, res) => {
     try {
-      const token = req.headers['authorization'] && req.headers['authorization'].split(' ')[1]; // Get token from Authorization header
-      if (!token) {
-        return res.status(400).json({ message: 'Token không hợp lệ.' });
-      }
-      // Add token to blacklist or handle session invalidation here if needed
-      const result = await UserModel.logoutSession(token);
+      const token = req.headers['authorization']?.split(' ')[1];
 
-      if (result.affectedRows === 0) {
+      if (!token) {
+        return res.status(400).json({ message: 'Không tìm thấy token trong request.' });
+      }
+
+      // Kiểm tra xem token có tồn tại trong active_sessions không
+      const query = 'SELECT * FROM active_sessions WHERE token = ? AND status = "active"';
+      const session = await db.query(query, [token]);
+
+      if (session.length === 0) {
         return res.status(400).json({ message: 'Không tìm thấy phiên đăng nhập để đăng xuất.' });
       }
 
-      res.json({ message: 'Đăng xuất thành công.' });
+      // Cập nhật trạng thái và lưu thời gian đăng xuất
+      const updateQuery = 'UPDATE active_sessions SET status = "inactive", logged_out_at = CURRENT_TIMESTAMP WHERE token = ?';
+      await db.query(updateQuery, [token]);
 
+      res.json({ message: 'Đăng xuất thành công.' });
     } catch (error) {
       console.error('Logout error:', error);
       res.status(500).json({ message: 'Đã có lỗi xảy ra khi đăng xuất.' });
@@ -280,14 +290,16 @@ const UserController = {
         return res.status(400).json({ message: 'Tên không được để trống.' });
       }
 
-      // Nếu có avatar:
+      // Lưu lại giá trị cũ trước khi thay đổi
+      const oldUser = await UserModel.getUserById(userId);  // Lấy thông tin người dùng cũ trước khi thay đổi
+
       let avatarUrl = null;
       if (avatar) {
         // Kiểm tra nếu avatar là base64
         if (avatar.startsWith('data:image')) {
           // Nếu là base64, gọi hàm upload lên cloud (ví dụ Cloudinary)
           try {
-            avatarUrl = await uploadAvatarToCloud(avatar);  // uploadAvatarToCloud là hàm xử lý upload ảnh base64
+            avatarUrl = await uploadAvatarToCloud(avatar);  // Upload ảnh base64 lên Cloudinary
           } catch (error) {
             return res.status(400).json({ message: 'Lỗi khi tải ảnh lên.' });
           }
@@ -295,7 +307,7 @@ const UserController = {
           // Nếu là file, kiểm tra và tải lên
           try {
             validateAvatar(avatar);  // Kiểm tra avatar nếu là file (định dạng và kích thước)
-            avatarUrl = await uploadAvatarToCloud(avatar);  // Upload file lên cloud
+            avatarUrl = await uploadAvatarToCloud(avatar);  // Upload file lên Cloudinary
           } catch (error) {
             return res.status(400).json({ message: error.message });
           }
@@ -305,6 +317,14 @@ const UserController = {
       // Cập nhật thông tin người dùng trong cơ sở dữ liệu
       await UserModel.updateProfile(userId, { name, avatarUrl });
       const updatedUser = await UserModel.getUserById(userId);
+
+      // Lưu vào bảng `user_update_history` lịch sử thay đổi
+      if (oldUser.name !== name) {
+        await UserModel.saveUpdateHistory(userId, 'Name', oldUser.name, name);
+      }
+      if (oldUser.avatar_url !== avatarUrl) {
+        await UserModel.saveUpdateHistory(userId, 'Avatar', oldUser.avatar_url, avatarUrl);
+      }
 
       res.json({
         message: 'Cập nhật thông tin thành công',
@@ -358,15 +378,39 @@ const UserController = {
     try {
       const { token, newPassword } = req.body;
 
+      // Kiểm tra nếu mật khẩu mới không được truyền vào
+      if (!newPassword) {
+        return res.status(400).json({ message: 'Mật khẩu mới không được để trống.' });
+      }
+
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const userId = decoded.userId;
 
-      // Hash new password
-      const passwordHash = await bcrypt.hash(newPassword, 10);
+      // Lấy thông tin người dùng từ cơ sở dữ liệu
+      const user = await UserModel.getUserById(userId);
 
-      // Update password in database
+      // Kiểm tra xem user có tồn tại và có password_hash hay không
+      if (!user || !user.password_hash) {
+        return res.status(404).json({ message: 'Không tìm thấy người dùng hoặc mật khẩu không hợp lệ.' });
+      }
+
+      console.log("User password hash:", user.password_hash);  // Log mật khẩu cũ để kiểm tra
+
+      // So sánh mật khẩu cũ với mật khẩu mới
+      const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+      if (isSamePassword) {
+        return res.status(400).json({ message: 'Mật khẩu mới không thể giống mật khẩu cũ.' });
+      }
+
+      // Mã hóa mật khẩu mới
+      const passwordHash = await bcrypt.hash(newPassword, 10);  // Mã hóa mật khẩu mới
+
+      // Cập nhật mật khẩu mới vào cơ sở dữ liệu
       await UserModel.updatePassword(userId, passwordHash);
+
+      // Xóa tất cả phiên đăng nhập cũ
+      await UserModel.logoutSession(userId);
 
       res.json({ message: 'Đặt lại mật khẩu thành công.' });
     } catch (error) {
@@ -421,45 +465,35 @@ const UserController = {
    */
   verifyEmail: async (req, res) => {
     try {
-      const { token } = req.query;
-
-      // Verify token
+      const token = req.query.token;
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const { email } = decoded;
+      const email = decoded.email;
 
-      // Get pending registration
-      const pendingRegistration = await UserModel.findPendingByEmail(email);
-      if (!pendingRegistration) {
-        return res.status(400).json({ message: 'Không tìm thấy thông tin đăng ký.' });
+      // Tìm trong bảng pending_registrations
+      const pendingUser = await UserModel.findPendingByEmail(email);
+      if (!pendingUser) {
+        return res.status(404).json({ message: 'Đăng ký chờ không tồn tại hoặc đã xác thực.' });
       }
 
-      // Check if token matches
-      if (pendingRegistration.verification_token !== token) {
-        return res.status(400).json({ message: 'Token không hợp lệ.' });
-      }
-
-      // Check if token has expired
-      if (new Date() > new Date(pendingRegistration.expires_at)) {
-        return res.status(400).json({ message: 'Token đã hết hạn. Vui lòng đăng ký lại.' });
-      }
-
-      // Create user in database
+      // Tạo người dùng chính thức
       await UserModel.createUser({
-        name: pendingRegistration.name,
-        email: pendingRegistration.email,
-        password: pendingRegistration.password_hash
+        name: pendingUser.name,
+        email: pendingUser.email,
+        password: pendingUser.password_hash,
+        is_email_verified: true
       });
 
-      // Delete pending registration
+      // Xóa bản ghi trong pending_registrations
       await UserModel.deletePendingRegistration(email);
 
-      res.json({ message: 'Xác thực email thành công. Bạn có thể đăng nhập ngay bây giờ.' });
+      // Cập nhật trạng thái thành "inactive" trong active_sessions sau khi xác thực email
+      const updateQuery = 'UPDATE active_sessions SET status = "inactive" WHERE token = ?';
+      await db.query(updateQuery, [token]);
+
+      res.json({ message: 'Xác thực email thành công. Bạn có thể đăng nhập ngay.' });
     } catch (error) {
-      console.error('Email verification error:', error);
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(400).json({ message: 'Token không hợp lệ hoặc đã hết hạn.' });
-      }
-      res.status(500).json({ message: 'Đã có lỗi xảy ra khi xác thực email.' });
+      console.error('Verify email error:', error);
+      res.status(400).json({ message: 'Token không hợp lệ hoặc đã hết hạn.' });
     }
   },
 

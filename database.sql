@@ -101,3 +101,22 @@ CREATE TABLE plants (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Thời gian cập nhật cây trồng',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- Ngày 14.06.25 --
+-- Cập nhật bảng active_sessions, thêm cột created_at, status, logged_in_at
+ALTER TABLE active_sessions
+ADD COLUMN expired_at TIMESTAMP NULL DEFAULT NULL COMMENT 'Thời gian hết hạn của phiên đăng nhập',
+ADD COLUMN status ENUM('active', 'inactive') DEFAULT 'active' COMMENT 'Trạng thái phiên đăng nhập',
+ADD COLUMN logged_out_at TIMESTAMP NULL DEFAULT NULL COMMENT 'Thời gian đăng xuất của phiên đăng nhập';
+
+-- Bảng Lịch sử thay đổi thông tin người dùng (user_update_history)
+CREATE TABLE user_update_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  update_type VARCHAR(255) NOT NULL,  -- Loại thay đổi (Ví dụ: 'Tên', 'Ảnh đại diện')
+  old_value TEXT,                     -- Giá trị cũ
+  new_value TEXT,                     -- Giá trị mới
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Thời gian thay đổi
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
