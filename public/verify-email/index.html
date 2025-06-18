@@ -141,11 +141,11 @@
                 const token = urlParams.get('token');
 
                 if (!token) {
-                    throw new Error('Token không hợp lệ');
+                    throw new Error('Token xác thực không được cung cấp');
                 }
 
-                // Gọi API xác thực
-                const response = await fetch(`/api/auth/verify-email?token=${token}`);
+                // Gọi API xác thực với token trong query parameter
+                const response = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
                 const data = await response.json();
 
                 if (!response.ok) {

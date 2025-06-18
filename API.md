@@ -239,21 +239,25 @@ POST /api/auth/reset-password
   "message": "Đặt lại mật khẩu thành công."
 }
 ```
-### Xác thực lại email
+
+### Yêu cầu xác thực lại email
 
 ```http
-GET /api/auth/verify-email
+POST /api/auth/resend-verification
 ```
 **Luồng xử lý:**
-1. Kiểm tra xem email đã tồn tại và chưa xác thực.
-2. Gửi lại email xác thực với mã token mới.
-
+1. Kiểm tra xem email đã đăng kí nhưng chưa xác thực
+2. Gửi lại emial xác thực với mã mới
 **Query Parameters:**
-    email: Địa chỉ email của người dùng cần xác thực lại.
+```json
+{
+  "email": "example@email.com"
+}
+```
 **Response Success: (200)**
 ```json
 {
-  "message": "Email xác thực đã được gửi lại."
+  "message": "Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư đến của bạn"
 }
 ```
 

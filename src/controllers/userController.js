@@ -343,7 +343,11 @@ const UserController = {
     try {
       const { email } = req.body;
 
-      // Check if email invalid
+      if (!email) {
+        return res.status(400).json({ message: 'Email không được để trống.' });
+      }
+
+      // Check if email exists
       const user = await UserModel.findByEmail(email);
       if (!user) {
         return res.status(404).json({ message: 'Không tìm thấy tài khoản với email này.' });
@@ -356,12 +360,33 @@ const UserController = {
         { expiresIn: '1h' }
       );
 
-      // Send reset email
-      const resetUrl = `${process.env.APP_URL}/reset-password?token=${resetToken}`;
+      // Send reset email with encoded token
+      const resetUrl = `${process.env.APP_URL}/reset-password?token=${encodeURIComponent(resetToken)}`;
       await transporter.sendMail({
         to: email,
         subject: 'Đặt lại mật khẩu',
-        html: `Click vào link sau để đặt lại mật khẩu: <a href="${resetUrl}">Đặt lại mật khẩu</a>`
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Đặt lại mật khẩu</h2>
+            <p style="color: #666; line-height: 1.6;">
+              Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. 
+              Vui lòng click vào nút bên dưới để đặt lại mật khẩu.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" 
+                 style="background-color: #3498db; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 5px; display: inline-block;">
+                Đặt lại mật khẩu
+              </a>
+            </div>
+            <p style="color: #666; line-height: 1.6;">
+              Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+            </p>
+            <p style="color: #999; font-size: 12px; margin-top: 30px;">
+              Link đặt lại mật khẩu này sẽ hết hạn sau 1 giờ.
+            </p>
+          </div>
+        `
       });
 
       res.json({ message: 'Hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn.' });
@@ -378,46 +403,58 @@ const UserController = {
     try {
       const { token, newPassword } = req.body;
 
-      // Kiểm tra nếu mật khẩu mới không được truyền vào
-      if (!newPassword) {
-        return res.status(400).json({ message: 'Mật khẩu mới không được để trống.' });
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: 'Token và mật khẩu mới không được để trống.' });
       }
 
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = decoded.userId;
+      try {
+        // Decode the token if it's URL encoded
+        const decodedToken = decodeURIComponent(token);
+        
+        // Verify token
+        const decoded = jwt.verify(decodedToken, process.env.JWT_SECRET);
+        const userId = decoded.userId;
 
-      // Lấy thông tin người dùng từ cơ sở dữ liệu
-      const user = await UserModel.getUserById(userId);
+        if (!userId) {
+          return res.status(400).json({ message: 'Token không hợp lệ.' });
+        }
 
-      // Kiểm tra xem user có tồn tại và có password_hash hay không
-      if (!user || !user.password_hash) {
-        return res.status(404).json({ message: 'Không tìm thấy người dùng hoặc mật khẩu không hợp lệ.' });
+        // Get user
+        const user = await UserModel.getUserById(userId);
+
+        // Check if user exists and has password_hash
+        if (!user || !user.password_hash) {
+          return res.status(404).json({ message: 'Không tìm thấy người dùng hoặc mật khẩu không hợp lệ.' });
+        }
+
+        // Check if new password is same as current
+        const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+        if (isSamePassword) {
+          return res.status(400).json({ message: 'Mật khẩu mới không thể giống mật khẩu cũ.' });
+        }
+
+        // Hash new password
+        const passwordHash = await bcrypt.hash(newPassword, 10);
+
+        // Update password in database
+        await UserModel.updatePassword(userId, passwordHash);
+
+        // Logout all sessions
+        await UserModel.logoutSession(userId);
+
+        res.json({ message: 'Đặt lại mật khẩu thành công.' });
+      } catch (jwtError) {
+        console.error('JWT verification error:', jwtError);
+        if (jwtError.name === 'JsonWebTokenError') {
+          return res.status(400).json({ message: 'Token không hợp lệ.' });
+        }
+        if (jwtError.name === 'TokenExpiredError') {
+          return res.status(400).json({ message: 'Token đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu lại.' });
+        }
+        throw jwtError;
       }
-
-      console.log("User password hash:", user.password_hash);  // Log mật khẩu cũ để kiểm tra
-
-      // So sánh mật khẩu cũ với mật khẩu mới
-      const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
-      if (isSamePassword) {
-        return res.status(400).json({ message: 'Mật khẩu mới không thể giống mật khẩu cũ.' });
-      }
-
-      // Mã hóa mật khẩu mới
-      const passwordHash = await bcrypt.hash(newPassword, 10);  // Mã hóa mật khẩu mới
-
-      // Cập nhật mật khẩu mới vào cơ sở dữ liệu
-      await UserModel.updatePassword(userId, passwordHash);
-
-      // Xóa tất cả phiên đăng nhập cũ
-      await UserModel.logoutSession(userId);
-
-      res.json({ message: 'Đặt lại mật khẩu thành công.' });
     } catch (error) {
       console.error('Password reset error:', error);
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(400).json({ message: 'Token không hợp lệ hoặc đã hết hạn.' });
-      }
       res.status(500).json({ message: 'Đã có lỗi xảy ra khi đặt lại mật khẩu.' });
     }
   },

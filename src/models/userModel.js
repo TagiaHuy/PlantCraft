@@ -82,6 +82,16 @@ const UserModel = {
    */
   updatePassword: async (userId, newPassword) => {
     try {
+      // First get the user's current password hash
+      const user = await UserModel.getUserById(userId);
+      if (!user) {
+        throw new Error('Không tìm thấy người dùng');
+      }
+
+      const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+      if (isSamePassword) {
+          throw new Error('Mật khẩu mới không thể giống mật khẩu cũ.');
+      }
       const passwordHash = await bcrypt.hash(newPassword, 10);  // Mã hóa mật khẩu mới
 
       const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
@@ -99,7 +109,7 @@ const UserModel = {
    */
   getUserById: async (userId) => {
     try {
-      const query = 'SELECT id, name, email, avatar_url, is_email_verified, created_at FROM users WHERE id = ?';
+      const query = 'SELECT id, name, email, password_hash, avatar_url, is_email_verified, created_at FROM users WHERE id = ?';
       const results = await db.query(query, [userId]);
       return results[0];  // Trả về người dùng đầu tiên tìm thấy
     } catch (error) {
@@ -131,10 +141,10 @@ const UserModel = {
   /**
    * Xóa phiên đăng nhập của người dùng khỏi active_sessions
    */
-  logoutSession: async (token) => {
+  logoutSession: async (userId) => {
     try {
       const query = 'DELETE FROM active_sessions WHERE user_id = ?';
-      const result = await db.query(query, [userId]);  // Giả sử userId được lấy từ token hoặc context
+      const result = await db.query(query, [userId]);
       return result;  // Trả về kết quả truy vấn xóa
     } catch (error) {
       console.error('Error logging out session:', error);
@@ -256,7 +266,26 @@ const UserModel = {
       console.error('Error saving update history:', error);
       throw new Error('Không thể lưu lịch sử thay đổi');
     }
-  }
+  },
+
+  /**
+   * Cập nhật token xác thực cho đăng ký chờ
+   */
+  updatePendingRegistrationToken: async (email, verificationToken) => {
+    try {
+      const query = 'UPDATE pending_registrations SET verification_token = ?, expires_at = ? WHERE email = ?';
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+      const result = await db.query(query, [verificationToken, expiresAt, email]);
+      
+      if (result.affectedRows === 0) {
+        throw new Error('Không tìm thấy đăng ký chờ để cập nhật.');
+      }
+      return result;
+    } catch (error) {
+      console.error('Error updating pending registration token:', error);
+      throw new Error('Không thể cập nhật token xác thực');
+    }
+  },
 };
 
 module.exports = UserModel;
