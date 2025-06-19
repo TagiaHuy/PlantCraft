@@ -433,11 +433,8 @@ const UserController = {
           return res.status(400).json({ message: 'Mật khẩu mới không thể giống mật khẩu cũ.' });
         }
 
-        // Hash new password
-        const passwordHash = await bcrypt.hash(newPassword, 10);
-
-        // Update password in database
-        await UserModel.updatePassword(userId, passwordHash);
+        // Update password in database (let model handle hashing)
+        await UserModel.updatePassword(userId, newPassword);
 
         // Logout all sessions
         await UserModel.logoutSession(userId);
