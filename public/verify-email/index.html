@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác thực Email - PlanCraft</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .message {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .button:hover {
+            background-color: #2980b9;
+        }
+
+        .button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/images/logo.jpg" alt="PlanCraft Logo" class="logo">
+        <h1>Xác thực Email</h1>
+        <div id="status" class="status"></div>
+        <div id="loading" class="loading"></div>
+        <p class="message">
+            Vui lòng đợi trong giây lát, chúng tôi đang xác thực email của bạn...
+        </p>
+        <a href="/" class="button" id="homeButton" style="display: none;">Về trang chủ</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const statusDiv = document.getElementById('status');
+            const loadingDiv = document.getElementById('loading');
+            const homeButton = document.getElementById('homeButton');
+            const message = document.querySelector('.message');
+
+            try {
+                loadingDiv.style.display = 'block';
+                
+                // Lấy token từ URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+
+                if (!token) {
+                    throw new Error('Token xác thực không được cung cấp');
+                }
+
+                // Gọi API xác thực với token trong query parameter
+                const response = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Xác thực thất bại');
+                }
+
+                // Hiển thị thông báo thành công
+                statusDiv.className = 'status success';
+                statusDiv.textContent = 'Xác thực email thành công!';
+                message.textContent = 'Bạn có thể đăng nhập ngay bây giờ.';
+                homeButton.style.display = 'inline-block';
+
+            } catch (error) {
+                // Hiển thị thông báo lỗi
+                statusDiv.className = 'status error';
+                statusDiv.textContent = error.message || 'Đã có lỗi xảy ra khi xác thực email';
+                message.textContent = 'Vui lòng thử lại sau hoặc liên hệ hỗ trợ.';
+                homeButton.style.display = 'inline-block';
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 
