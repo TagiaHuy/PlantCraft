@@ -88,14 +88,8 @@ const UserModel = {
         throw new Error('Không tìm thấy người dùng');
       }
 
-      const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
-      if (isSamePassword) {
-          throw new Error('Mật khẩu mới không thể giống mật khẩu cũ.');
-      }
-      const passwordHash = await bcrypt.hash(newPassword, 10);  // Mã hóa mật khẩu mới
-
       const query = 'UPDATE users SET password_hash = ? WHERE id = ?';
-      const result = await db.query(query, [passwordHash, userId]); // Cập nhật mật khẩu đã mã hóa vào cơ sở dữ liệu
+      const result = await db.query(query, [newPassword, userId]); // Cập nhật mật khẩu đã mã hóa vào cơ sở dữ liệu
 
       return result;
     } catch (error) {

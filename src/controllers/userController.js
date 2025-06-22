@@ -178,7 +178,7 @@ const UserController = {
       const { email, password } = req.body;
 
       const user = await UserModel.findByEmail(email);
-      
+      console.log(user);
       // Kiểm tra xác thực email
       if (!user || !user.is_email_verified) {
         return res.status(401).json({ message: 'Email chưa được xác thực hoặc không tồn tại.' });
@@ -401,10 +401,11 @@ const UserController = {
    */
   resetPassword: async (req, res) => {
     try {
-      const { token, newPassword } = req.body;
+      const token = req.query.token;
+      const {newPassword } = req.body;
 
-      if (!token || !newPassword) {
-        return res.status(400).json({ message: 'Token và mật khẩu mới không được để trống.' });
+      if (!newPassword) {
+        return res.status(400).json({ message: 'Mật khẩu mới không được để trống.' });
       }
 
       try {
@@ -433,8 +434,9 @@ const UserController = {
           return res.status(400).json({ message: 'Mật khẩu mới không thể giống mật khẩu cũ.' });
         }
 
-        // Hash new password
-        const passwordHash = await bcrypt.hash(newPassword, 10);
+        // Hash password
+        const saltRounds = 10;
+        const passwordHash = await bcrypt.hash(newPassword, saltRounds);
 
         // Update password in database
         await UserModel.updatePassword(userId, passwordHash);
@@ -487,7 +489,28 @@ const UserController = {
       await transporter.sendMail({
         to: email,
         subject: 'Xác thực lại email của bạn',
-        html: `...`
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #2c3e50;">Xác thực email của bạn</h2>
+            <p style="color: #666; line-height: 1.6;">
+              Cảm ơn bạn đã đăng ký tài khoản tại PlanCraft. Để hoàn tất quá trình đăng ký, 
+              vui lòng click vào nút bên dưới để xác thực email của bạn.
+            </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background-color: #3498db; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 5px; display: inline-block;">
+                Xác thực email
+              </a>
+            </div>
+            <p style="color: #666; line-height: 1.6;">
+              Nếu bạn không thực hiện đăng ký tài khoản này, vui lòng bỏ qua email này.
+            </p>
+            <p style="color: #999; font-size: 12px; margin-top: 30px;">
+              Link xác thực này sẽ hết hạn sau 24 giờ.
+            </p>
+          </div>
+        `
       });
 
       res.json({ message: 'Email xác thực đã được gửi lại. Vui lòng kiểm tra hộp thư đến của bạn.' });

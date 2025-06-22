@@ -117,56 +117,77 @@
 <body>
     <div class="container">
         <img src="/images/logo.jpg" alt="PlanCraft Logo" class="logo">
-        <h1>Xác thực Email</h1>
+        <h1>Đặt lại mật khẩu</h1>
         <div id="status" class="status"></div>
         <div id="loading" class="loading"></div>
-        <p class="message">
-            Vui lòng đợi trong giây lát, chúng tôi đang xác thực email của bạn...
-        </p>
-        <a href="/" class="button" id="homeButton" style="display: none;">Về trang chủ</a>
+        <form id="resetForm">
+            <input type="password" id="newPassword" placeholder="Nhập mật khẩu mới" style="width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" required minlength="8">
+            <button type="submit" class="button">Đặt lại mật khẩu</button>
+        </form>
+        <a href="/" class="button" id="homeButton" style="display: none; margin-top: 20px;">Về trang chủ</a>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const statusDiv = document.getElementById('status');
             const loadingDiv = document.getElementById('loading');
             const homeButton = document.getElementById('homeButton');
-            const message = document.querySelector('.message');
+            const resetForm = document.getElementById('resetForm');
+            const newPasswordInput = document.getElementById('newPassword');
 
-            try {
-                loadingDiv.style.display = 'block';
-                
-                // Lấy token từ URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const token = urlParams.get('token');
+            // Lấy token từ URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
 
-                if (!token) {
-                    throw new Error('Token không hợp lệ');
-                }
-
-                // Gọi API xác thực
-                const response = await fetch(`/api/auth/verify-email?token=${token}`);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Xác thực thất bại');
-                }
-
-                // Hiển thị thông báo thành công
-                statusDiv.className = 'status success';
-                statusDiv.textContent = 'Xác thực email thành công!';
-                message.textContent = 'Bạn có thể đăng nhập ngay bây giờ.';
-                homeButton.style.display = 'inline-block';
-
-            } catch (error) {
-                // Hiển thị thông báo lỗi
+            if (!token) {
                 statusDiv.className = 'status error';
-                statusDiv.textContent = error.message || 'Đã có lỗi xảy ra khi xác thực email';
-                message.textContent = 'Vui lòng thử lại sau hoặc liên hệ hỗ trợ.';
+                statusDiv.textContent = 'Token đặt lại mật khẩu không được cung cấp.';
                 homeButton.style.display = 'inline-block';
-            } finally {
-                loadingDiv.style.display = 'none';
+                resetForm.style.display = 'none';
+                return;
             }
+
+            resetForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                statusDiv.textContent = '';
+                statusDiv.className = 'status';
+                loadingDiv.style.display = 'block';
+                homeButton.style.display = 'none';
+
+                const newPassword = newPasswordInput.value;
+                if (newPassword.length < 8) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = 'Mật khẩu phải có ít nhất 8 ký tự.';
+                    loadingDiv.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/auth/reset-password?token=${encodeURIComponent(token)}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ newPassword })
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Đặt lại mật khẩu thất bại.');
+                    }
+
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập với mật khẩu mới.';
+                    resetForm.style.display = 'none';
+                    homeButton.style.display = 'inline-block';
+                } catch (error) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = error.message || 'Đã có lỗi xảy ra khi đặt lại mật khẩu.';
+                    homeButton.style.display = 'inline-block';
+                } finally {
+                    loadingDiv.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>
