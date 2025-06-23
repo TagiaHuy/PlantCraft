@@ -21,7 +21,7 @@ pipeline {
                 echo 'Building project'
                 // Nếu không có script build thì có thể bỏ qua hoặc giữ lại cho tương lai 
                 bat 'npm start'
-            }
+            } 
         }
 
         stage('Test') {
