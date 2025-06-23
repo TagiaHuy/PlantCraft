@@ -1,0 +1,44 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Clone') {
+            steps {
+                echo 'Cloning source code'
+                git branch: 'main', url: 'https://github.com/TagiaHuy/PlantCraft.git'
+            }
+        }
+
+        stage('Install dependencies') {
+            steps {
+                echo 'Installing npm packages'
+                bat 'npm install'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo 'Building project'
+                // Nếu không có script build thì có thể bỏ qua hoặc giữ lại cho tương lai
+                // bat 'npm run build'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                echo 'Running tests'
+                // Nếu có test thì bỏ comment dòng dưới
+                // bat 'npm test'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'Deploying application'
+                // Ví dụ: copy code sang thư mục chạy production (tuỳ môi trường)
+                // bat 'xcopy "%WORKSPACE%\\dist" /E /Y /I /R "c:\\wwwroot\\myproject"'
+                // Hoặc restart service, hoặc deploy lên server khác
+            }
+        }
+    }
+}
