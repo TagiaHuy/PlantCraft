@@ -20,7 +20,7 @@ pipeline {
             steps {
                 echo 'Building project'
                 // Nếu không có script build thì có thể bỏ qua hoặc giữ lại cho tương lai
-                // bat 'npm run build'
+                bat 'npm start'
             }
         }
 
