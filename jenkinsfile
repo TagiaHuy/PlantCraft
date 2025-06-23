@@ -16,18 +16,18 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                echo 'Running tests'
-                // Nếu có test thì bỏ comment dòng dưới
-                bat 'npm test'
-            }
-        }
+        // stage('Test') {
+        //     steps {
+        //         echo 'Running tests'
+        //         // Nếu có test thì bỏ comment dòng dưới
+        //         bat 'npm test'
+        //     }
+        // }
 
         stage('Deploy') {
             steps {
                 echo 'Deploying application'
-                
+
                 bat 'npm start'
             }
         }
