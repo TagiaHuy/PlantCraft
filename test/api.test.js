@@ -78,7 +78,7 @@ describe('User API Integration', function() {
       .end((err, res) => {
         expect(res.body).to.have.property('message');
         done(err);
-      });
+      }); 
   });
 
   it('should fail to reset password with invalid token', (done) => {
