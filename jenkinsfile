@@ -16,6 +16,13 @@ pipeline {
             }
         }
 
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image'
+                bat 'docker build -t plancraft .'
+            }
+        }
+
         // stage('Test') {
         //     steps {
         //         echo 'Running tests'
@@ -27,8 +34,9 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying application'
-
-                bat 'npm start'
+                // Nếu muốn chạy container, thêm lệnh dưới:
+                bat 'docker run -d -p 3000:3000 --name plancraft_container plancraft'
+                // bat 'npm start'
             }
         } 
     }
