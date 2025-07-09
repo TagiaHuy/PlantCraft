@@ -18,7 +18,7 @@ const GoalModel = {
   },
 
   // Lấy danh sách mục tiêu với phân trang và tìm kiếm
-  getGoals: async ({ search = "", status = "", priority = "", limit = 10, offset = 0 }) => {
+  getGoals: async ({ search = "", status = "", priority = "", userId = null, limit = 10, offset = 0 }) => {
     try {
       // Kiểm tra giá trị limit và offset hợp lệ (cần là số nguyên và không âm)
       limit = parseInt(limit, 10);
@@ -50,6 +50,11 @@ const GoalModel = {
         params.push(`%${priority}%`);
       }
 
+      if (userId) {
+        whereClause.push('user_id = ?');
+        params.push(userId);
+      }
+
       // Construct the final query with LIMIT and OFFSET directly in the SQL string
       const query = `
         SELECT * FROM goals
@@ -68,13 +73,35 @@ const GoalModel = {
   },
 
   // Lấy tổng số mục tiêu để tính phân trang
-  getTotalGoals: async ({ search = "", status = "", priority = "" }) => {
+  getTotalGoals: async ({ search = "", status = "", priority = "", userId = null }) => {
     try {
+      let whereClause = [];
+      let params = [];
+
+      if (search) {
+        whereClause.push('name LIKE ?');
+        params.push(`%${search}%`);
+      }
+
+      if (status) {
+        whereClause.push('status LIKE ?');
+        params.push(`%${status}%`);
+      }
+
+      if (priority) {
+        whereClause.push('priority LIKE ?');
+        params.push(`%${priority}%`);
+      }
+
+      if (userId) {
+        whereClause.push('user_id = ?');
+        params.push(userId);
+      }
+
       const query = `
         SELECT COUNT(*) AS totalGoals FROM goals
-        WHERE name LIKE ? AND status LIKE ? AND priority LIKE ?;
+        ${whereClause.length > 0 ? 'WHERE ' + whereClause.join(' AND ') : ''};
       `;
-      const params = [`%${search}%`, `%${status}%`, `%${priority}%`];
       const result = await db.query(query, params);
       return result[0].totalGoals;
     } catch (error) {
@@ -118,8 +145,8 @@ const GoalModel = {
   // Cập nhật tiến độ mục tiêu
   updateProgress: async (goalId, updateData) => {
     try {
-      const query = 'UPDATE goals SET progress = ? WHERE id = ?';
-      const params = [updateData.progress, goalId];
+      const query = 'UPDATE goals SET progress = ?, status = ? WHERE id = ?';
+      const params = [updateData.progress, updateData.status, goalId];
       const result = await db.query(query, params);
       return result;
     } catch (error) {
@@ -181,9 +208,9 @@ const GoalModel = {
       const query = `
         SELECT 
           COUNT(*) AS totalGoals,
-          SUM(status = 'Completed') AS completedGoals,
-          SUM(status = 'In Progress') AS inProgressGoals,
-          SUM(status = 'Not Started') AS notStartedGoals
+          SUM(status = 'completed') AS completedGoals,
+          SUM(status = 'in_progress') AS inProgressGoals,
+          SUM(status = 'not_started') AS notStartedGoals
         FROM goals
         WHERE user_id = ?
       `;
@@ -213,7 +240,7 @@ const GoalModel = {
     try {
       const query = `
         SELECT * FROM goals
-        WHERE status = 'Completed' AND user_id = ?
+        WHERE status = 'completed' AND user_id = ?
         ORDER BY deadline DESC;
       `;
       const params = [userId];

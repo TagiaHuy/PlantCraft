@@ -501,7 +501,7 @@ Authorization: Bearer jwt_token_here
 
 ```json
 {
-  "result": "Completed"
+  "result": "completed"
 }
 ```
 **Response Success: (200)**

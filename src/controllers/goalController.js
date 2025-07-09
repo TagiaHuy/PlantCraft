@@ -64,6 +64,7 @@ const getGoals = async (req, res) => {
       search: search.toString(),
       status: status.toString(),
       priority: priority.toString(),
+      userId: req.user.id,
       limit: parsedLimit,
       offset: offset
     });
@@ -71,7 +72,8 @@ const getGoals = async (req, res) => {
     const totalGoals = await GoalModel.getTotalGoals({
       search: search.toString(),
       status: status.toString(),
-      priority: priority.toString()
+      priority: priority.toString(),
+      userId: req.user.id
     });
 
     res.status(200).json({
@@ -174,7 +176,7 @@ const updateProgress = async (req, res) => {
     }
 
     // Xác định trạng thái dựa trên tiến độ
-    const status = progressNum === 100 ? 'Completed' : 'In Progress';
+    const status = progressNum === 100 ? 'completed' : 'in_progress';
 
     // Cập nhật tiến độ và trạng thái mục tiêu
     await GoalModel.updateProgress(goalId, { 
@@ -209,8 +211,8 @@ const updateGoalResult = async (req, res) => {
     const goalId = req.params.goalId; // goalId từ URL
     const { result } = req.body; // Kết quả mục tiêu (ví dụ: "Completed")
 
-    // Kiểm tra nếu result hợp lệ (ví dụ: 'Completed' hoặc 'Not Completed')
-    const validResults = ['Completed', 'Not Completed'];
+    // Kiểm tra nếu result hợp lệ (ví dụ: 'completed' hoặc 'cancelled')
+    const validResults = ['completed', 'cancelled'];
     if (!validResults.includes(result)) {
       return res.status(400).json({ message: 'Kết quả mục tiêu không hợp lệ.' });
     }
@@ -263,12 +265,7 @@ const getCompletedGoals = async (req, res) => {
     const userId = req.user.id;  // ID người dùng hiện tại
     
     // Gọi hàm model để lấy các mục tiêu hoàn thành của người dùng
-    const completedGoals = await GoalModel.getGoals({
-      userId,               // ID người dùng
-      status: 'Completed',  // Trạng thái "Completed"
-      offset: 0,            // Không phân trang (hoặc thay đổi nếu cần phân trang)
-      limit: 10             // Giới hạn số lượng mục tiêu trả về
-    });
+    const completedGoals = await GoalModel.getCompletedGoals(userId);
 
     // Kiểm tra nếu không có mục tiêu hoàn thành nào
     if (completedGoals.length === 0) {

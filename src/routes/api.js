@@ -27,10 +27,10 @@ router.get('/goals', authenticateToken, goalController.getGoals);
 router.get('/goals/completed', authenticateToken, goalController.getCompletedGoals);
 router.get('/goals/stats', authenticateToken, goalController.getGoalStats);
 router.post('/goals/groups', authenticateToken, goalController.createGoalGroup);
-// router.get('/goals/:goalId', authenticateToken, goalController.getGoalById);
-// router.put('/goals/:goalId', authenticateToken, goalController.updateGoal);
-// router.put('/goals/:goalId/progress', authenticateToken, goalController.updateProgress);
-// router.put('/goals/:goalId/result', authenticateToken, goalController.updateGoalResult);
-// router.delete('/goals/:goalId', authenticateToken, goalController.deleteGoal);
+router.get('/goals/:goalId', authenticateToken, goalController.getGoalById);
+router.put('/goals/:goalId', authenticateToken, goalController.updateGoal);
+router.put('/goals/:goalId/progress', authenticateToken, goalController.updateProgress);
+router.put('/goals/:goalId/result', authenticateToken, goalController.updateGoalResult);
+router.delete('/goals/:goalId', authenticateToken, goalController.deleteGoal);
 
 module.exports = router;
