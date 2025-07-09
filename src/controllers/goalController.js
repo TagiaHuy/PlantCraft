@@ -314,6 +314,160 @@ const getGoalStats = async (req, res) => {
   }
 };
 
+// Xem tiến độ mục tiêu với giai đoạn
+const getProgressWithPhases = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const userId = req.user.id;
+
+    // Lấy thông tin goal
+    const goal = await GoalModel.getGoalById(goalId);
+    if (!goal || goal.user_id !== userId) {
+      return res.status(404).json({
+        message: 'Không tìm thấy mục tiêu hoặc không có quyền truy cập'
+      });
+    }
+
+    // Lấy danh sách phases
+    const GoalPhaseModel = require('../models/goalPhaseModel');
+    const phases = await GoalPhaseModel.getPhasesByGoalId(goalId, userId);
+
+    // Tính toán tiến độ tổng thể
+    const totalPhases = phases.length;
+    const completedPhases = phases.filter(p => p.status === 'completed').length;
+    const overallProgress = totalPhases > 0 ? Math.round((completedPhases / totalPhases) * 100) : 0;
+
+    // Phân tích và dự đoán
+    const analysis = {
+      estimated_completion_date: null,
+      on_track: true,
+      next_milestone: null,
+      suggestions: []
+    };
+
+    if (phases.length > 0) {
+      const nextPhase = phases.find(p => p.status !== 'completed');
+      if (nextPhase) {
+        analysis.next_milestone = `Hoàn thành ${nextPhase.title}`;
+      }
+
+      // Tính toán dự đoán thời gian hoàn thành
+      const remainingPhases = phases.filter(p => p.status !== 'completed').length;
+      if (remainingPhases > 0) {
+        const avgDaysPerPhase = 7; // Giả sử trung bình 7 ngày/phase
+        const estimatedDays = remainingPhases * avgDaysPerPhase;
+        const estimatedDate = new Date();
+        estimatedDate.setDate(estimatedDate.getDate() + estimatedDays);
+        analysis.estimated_completion_date = estimatedDate.toISOString().split('T')[0];
+      }
+
+      // Đề xuất cải thiện
+      if (overallProgress < 50) {
+        analysis.suggestions.push('Tăng tốc độ hoàn thành để đạt deadline');
+      }
+      if (phases.some(p => p.status === 'not_started')) {
+        analysis.suggestions.push('Bắt đầu các giai đoạn chưa thực hiện');
+      }
+    }
+
+    res.json({
+      goal: {
+        id: goal.id,
+        name: goal.name,
+        description: goal.description,
+        deadline: goal.deadline,
+        priority: goal.priority,
+        status: goal.status,
+        overall_progress: overallProgress
+      },
+      phases,
+      analysis
+    });
+  } catch (error) {
+    console.error('Error getting progress with phases:', error);
+    res.status(500).json({
+      message: 'Lỗi server khi lấy tiến độ mục tiêu'
+    });
+  }
+};
+
+// Lấy roadmap chi tiết của mục tiêu
+const getGoalRoadmap = async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const userId = req.user.id;
+
+    // Lấy thông tin goal
+    const goal = await GoalModel.getGoalById(goalId);
+    if (!goal || goal.user_id !== userId) {
+      return res.status(404).json({
+        message: 'Không tìm thấy mục tiêu hoặc không có quyền truy cập'
+      });
+    }
+
+    // Lấy danh sách phases
+    const GoalPhaseModel = require('../models/goalPhaseModel');
+    const phases = await GoalPhaseModel.getPhasesByGoalId(goalId, userId);
+
+    // Lấy tasks cho từng phase
+    const TaskModel = require('../models/taskModel');
+    const roadmap = await Promise.all(
+      phases.map(async (phase) => {
+        const tasks = await TaskModel.getTasksByPhaseId(phase.id);
+        
+        return {
+          phase: {
+            id: phase.id,
+            title: phase.title,
+            order_number: phase.order_number,
+            progress: phase.progress
+          },
+          tasks: tasks.map(task => ({
+            id: task.id,
+            title: task.title,
+            status: task.status,
+            deadline: task.deadline
+          })),
+          milestone: `Hoàn thành ${phase.title}`
+        };
+      })
+    );
+
+    // Tính toán timeline
+    const timeline = {
+      start_date: goal.created_at ? goal.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      end_date: goal.deadline,
+      total_duration: null,
+      remaining_duration: null
+    };
+
+    if (timeline.start_date && timeline.end_date) {
+      const start = new Date(timeline.start_date);
+      const end = new Date(timeline.end_date);
+      const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      const remainingDays = Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24));
+      
+      timeline.total_duration = `${totalDays} days`;
+      timeline.remaining_duration = `${Math.max(0, remainingDays)} days`;
+    }
+
+    res.json({
+      goal: {
+        id: goal.id,
+        name: goal.name,
+        deadline: goal.deadline
+      },
+      roadmap,
+      timeline
+    });
+  } catch (error) {
+    console.error('Error getting goal roadmap:', error);
+    res.status(500).json({
+      message: 'Lỗi server khi lấy roadmap mục tiêu'
+    });
+  }
+};
+
 module.exports = {
   createGoal,
   getGoals,
@@ -324,5 +478,7 @@ module.exports = {
   getCompletedGoals,
   createGoalGroup,
   getGoalStats,
-  updateGoalResult
+  updateGoalResult,
+  getProgressWithPhases,
+  getGoalRoadmap
 };

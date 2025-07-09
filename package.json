@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "mocha"
+    "test": "mocha",
+    "test:goal-phases": "mocha test/goal-phase-api.test.js",
+    "setup-db": "node scripts/setup-database.js",
+    "test-db": "node scripts/test-db-connection.js",
+    "init": "npm run setup-db && npm run dev"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

@@ -624,28 +624,24 @@ Authorization: Bearer jwt_token_here
 }
 ```
 
-## Tasks Management
+## Goal Phase Management
 
-### Tạo nhiệm vụ mới
+### Tạo giai đoạn mục tiêu mới
 
 ```http
-POST /api/tasks
+POST /api/goals/:goalId/phases
 ```
 
 **Luồng xử lý:**
 1. Xác thực JWT token từ header
-2. Kiểm tra tính hợp lệ của dữ liệu:
-   - Validate các trường bắt buộc
-   - Kiểm tra định dạng deadline
-   - Validate priority
-   - Kiểm tra goal_id tồn tại và thuộc về user
-3. Tính toán thời gian dự kiến hoàn thành dựa trên:
-   - Độ phức tạp của nhiệm vụ
-   - Priority level
-   - Thời gian còn lại đến deadline
-4. Tạo nhiệm vụ mới trong database
-5. Cập nhật số lượng tasks của goal tương ứng
-6. Trả về thông tin nhiệm vụ đã tạo
+2. Kiểm tra goal tồn tại và thuộc về user
+3. Validate dữ liệu đầu vào:
+   - Title không được rỗng
+   - Order_number phải là số nguyên dương
+   - Kiểm tra order_number không trùng lặp trong cùng goal
+4. Tạo giai đoạn mới trong database
+5. Cập nhật thứ tự các giai đoạn khác nếu cần
+6. Trả về thông tin giai đoạn đã tạo
 
 **Headers:**
 ```
@@ -655,10 +651,338 @@ Authorization: Bearer jwt_token_here
 **Request Body:**
 ```json
 {
-  "title": "Hoàn thành bài tập về State Management",
-  "description": "Làm các bài tập về Redux",
-  "deadline": "2024-01-15T23:59:59Z",
-  "goal_id": 1,
+  "title": "Giai đoạn 1: Học cơ bản",
+  "description": "Học các khái niệm cơ bản về Node.js",
+  "order_number": 1
+}
+```
+
+**Response Success: (201)**
+```json
+{
+  "message": "Tạo giai đoạn mục tiêu thành công",
+  "phase": {
+    "id": 1,
+    "goal_id": 1,
+    "title": "Giai đoạn 1: Học cơ bản",
+    "description": "Học các khái niệm cơ bản về Node.js",
+    "order_number": 1,
+    "created_at": "2024-01-15T10:00:00Z"
+  }
+}
+```
+
+### Xem danh sách giai đoạn của mục tiêu
+
+```http
+GET /api/goals/:goalId/phases
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal tồn tại và thuộc về user
+3. Lấy danh sách giai đoạn theo thứ tự order_number
+4. Tính toán tiến độ của từng giai đoạn
+5. Trả về danh sách giai đoạn với thông tin chi tiết
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Response Success: (200)**
+```json
+{
+  "goal": {
+    "id": 1,
+    "name": "Học lập trình Node.js"
+  },
+  "phases": [
+    {
+      "id": 1,
+      "title": "Giai đoạn 1: Học cơ bản",
+      "description": "Học các khái niệm cơ bản về Node.js",
+      "order_number": 1,
+      "progress": 75,
+      "total_tasks": 4,
+      "completed_tasks": 3,
+      "status": "in_progress"
+    },
+    {
+      "id": 2,
+      "title": "Giai đoạn 2: Thực hành",
+      "description": "Làm các bài tập thực hành",
+      "order_number": 2,
+      "progress": 0,
+      "total_tasks": 6,
+      "completed_tasks": 0,
+      "status": "not_started"
+    }
+  ]
+}
+```
+
+### Lấy thông tin chi tiết giai đoạn
+
+```http
+GET /api/goals/:goalId/phases/:phaseId
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Lấy thông tin chi tiết giai đoạn
+4. Lấy danh sách tasks thuộc giai đoạn này
+5. Tính toán các chỉ số tiến độ
+6. Trả về thông tin chi tiết
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Response Success: (200)**
+```json
+{
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản",
+    "description": "Học các khái niệm cơ bản về Node.js",
+    "order_number": 1,
+    "progress": 75,
+    "total_tasks": 4,
+    "completed_tasks": 3,
+    "status": "in_progress",
+    "created_at": "2024-01-15T10:00:00Z"
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Học về Express.js",
+      "status": "completed",
+      "priority": "high"
+    },
+    {
+      "id": 2,
+      "title": "Học về Middleware",
+      "status": "in_progress",
+      "priority": "medium"
+    }
+  ]
+}
+```
+
+### Cập nhật thông tin giai đoạn
+
+```http
+PUT /api/goals/:goalId/phases/:phaseId
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Validate dữ liệu đầu vào
+4. Cập nhật thông tin giai đoạn
+5. Cập nhật thứ tự nếu order_number thay đổi
+6. Trả về thông tin đã cập nhật
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Request Body:**
+```json
+{
+  "title": "Giai đoạn 1: Học cơ bản Node.js",
+  "description": "Học các khái niệm cơ bản về Node.js và Express",
+  "order_number": 1
+}
+```
+
+**Response Success: (200)**
+```json
+{
+  "message": "Cập nhật giai đoạn thành công",
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản Node.js",
+    "description": "Học các khái niệm cơ bản về Node.js và Express",
+    "order_number": 1,
+    "updated_at": "2024-01-15T11:00:00Z"
+  }
+}
+```
+
+### Xóa giai đoạn mục tiêu
+
+```http
+DELETE /api/goals/:goalId/phases/:phaseId
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Kiểm tra giai đoạn có tasks chưa hoàn thành không
+4. Xóa giai đoạn và tất cả tasks thuộc giai đoạn
+5. Cập nhật thứ tự các giai đoạn còn lại
+6. Trả về thông báo thành công
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Response Success: (200)**
+```json
+{
+  "message": "Xóa giai đoạn thành công"
+}
+```
+
+**Response Error: (400)**
+```json
+{
+  "message": "Không thể xóa giai đoạn có tasks chưa hoàn thành"
+}
+```
+
+### Sắp xếp lại thứ tự giai đoạn
+
+```http
+PUT /api/goals/:goalId/phases/reorder
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal tồn tại và thuộc về user
+3. Validate danh sách thứ tự mới
+4. Cập nhật order_number cho tất cả giai đoạn
+5. Trả về danh sách giai đoạn đã sắp xếp
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Request Body:**
+```json
+{
+  "phase_orders": [
+    {"phase_id": 2, "order_number": 1},
+    {"phase_id": 1, "order_number": 2},
+    {"phase_id": 3, "order_number": 3}
+  ]
+}
+```
+
+**Response Success: (200)**
+```json
+{
+  "message": "Sắp xếp lại thứ tự thành công",
+  "phases": [
+    {
+      "id": 2,
+      "title": "Giai đoạn 2: Thực hành",
+      "order_number": 1
+    },
+    {
+      "id": 1,
+      "title": "Giai đoạn 1: Học cơ bản",
+      "order_number": 2
+    },
+    {
+      "id": 3,
+      "title": "Giai đoạn 3: Nâng cao",
+      "order_number": 3
+    }
+  ]
+}
+```
+
+### Thống kê tiến độ giai đoạn
+
+```http
+GET /api/goals/:goalId/phases/:phaseId/stats
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Tính toán các chỉ số:
+   - Tổng số tasks trong giai đoạn
+   - Số tasks đã hoàn thành
+   - Phần trăm hoàn thành
+   - Thời gian trung bình hoàn thành task
+4. Phân tích xu hướng tiến độ
+5. Trả về thống kê chi tiết
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Response Success: (200)**
+```json
+{
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản"
+  },
+  "statistics": {
+    "total_tasks": 4,
+    "completed_tasks": 3,
+    "in_progress_tasks": 1,
+    "pending_tasks": 0,
+    "completion_rate": 75,
+    "average_completion_time": 120,
+    "estimated_remaining_time": 60
+  },
+  "timeline": [
+    {
+      "date": "2024-01-10",
+      "completed_tasks": 1
+    },
+    {
+      "date": "2024-01-12",
+      "completed_tasks": 2
+    },
+    {
+      "date": "2024-01-15",
+      "completed_tasks": 3
+    }
+  ]
+}
+```
+
+### Tạo nhiệm vụ trong giai đoạn
+
+```http
+POST /api/goals/:goalId/phases/:phaseId/tasks
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Validate dữ liệu đầu vào:
+   - Title không được rỗng
+   - Deadline phải là ngày hợp lệ
+   - Priority phải hợp lệ
+4. Tạo task mới với phase_id
+5. Cập nhật số lượng tasks của phase
+6. Trả về thông tin task đã tạo
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Request Body:**
+```json
+{
+  "title": "Học về Express.js",
+  "description": "Tìm hiểu về framework Express.js",
+  "deadline": "2024-01-20T23:59:59Z",
   "priority": "high"
 }
 ```
@@ -666,45 +990,472 @@ Authorization: Bearer jwt_token_here
 **Response Success: (201)**
 ```json
 {
-  "message": "Tạo nhiệm vụ thành công",
+  "message": "Tạo nhiệm vụ trong giai đoạn thành công",
   "task": {
     "id": 1,
-    "title": "Hoàn thành bài tập về State Management",
-    "description": "Làm các bài tập về Redux",
-    "deadline": "2024-01-15T23:59:59Z",
+    "title": "Học về Express.js",
+    "description": "Tìm hiểu về framework Express.js",
+    "deadline": "2024-01-20T23:59:59Z",
     "goal_id": 1,
+    "phase_id": 1,
     "priority": "high",
     "status": "pending",
-    "estimated_duration": 120
+    "created_at": "2024-01-15T10:00:00Z"
   }
 }
 ```
 
-### Xem danh sách nhiệm vụ hôm nay
+### Xem danh sách nhiệm vụ trong giai đoạn
 
 ```http
-GET /api/tasks/today
+GET /api/goals/:goalId/phases/:phaseId/tasks
 ```
 
 **Luồng xử lý:**
 1. Xác thực JWT token từ header
-2. Xác định múi giờ của người dùng
-3. Lấy danh sách nhiệm vụ theo điều kiện:
-   - Nhiệm vụ chưa hoàn thành
-   - Deadline trong ngày hôm nay
-   - Nhiệm vụ được lên kế hoạch cho hôm nay
-4. Sắp xếp nhiệm vụ theo:
-   - Priority level
-   - Thời gian còn lại đến deadline
-   - Estimated duration
-5. Tính toán suggested_duration cho mỗi task
-6. Trả về danh sách đã sắp xếp
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Lấy danh sách tasks theo phase_id
+4. Sắp xếp theo priority và deadline
+5. Tính toán thời gian còn lại cho mỗi task
+6. Trả về danh sách tasks
 
 **Headers:**
 ```
 Authorization: Bearer jwt_token_here
 ```
 
+**Query Parameters:**
+- `status`: Lọc theo trạng thái (pending, in_progress, completed, cancelled)
+- `priority`: Lọc theo độ ưu tiên (low, medium, high)
+- `sort_by`: Sắp xếp theo (priority, deadline, created_at)
+
+**Response Success: (200)**
+```json
+{
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản"
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Học về Express.js",
+      "description": "Tìm hiểu về framework Express.js",
+      "deadline": "2024-01-20T23:59:59Z",
+      "priority": "high",
+      "status": "in_progress",
+      "remaining_time": "5d 13h 30m"
+    },
+    {
+      "id": 2,
+      "title": "Học về Middleware",
+      "description": "Tìm hiểu về middleware trong Express",
+      "deadline": "2024-01-25T23:59:59Z",
+      "priority": "medium",
+      "status": "pending",
+      "remaining_time": "10d 13h 30m"
+    }
+  ],
+  "total": 2,
+  "filters": {
+    "status": "all",
+    "priority": "all",
+    "sort_by": "priority"
+  }
+}
+```
+
+### Cập nhật trạng thái nhiệm vụ trong giai đoạn
+
+```http
+PUT /api/goals/:goalId/phases/:phaseId/tasks/:taskId/status
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal, phase và task tồn tại và thuộc về user
+3. Validate status mới hợp lệ
+4. Cập nhật trạng thái task
+5. Cập nhật tiến độ của phase và goal
+6. Gửi thông báo nếu phase hoàn thành
+7. Trả về thông tin đã cập nhật
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Request Body:**
+```json
+{
+  "status": "completed"
+}
+```
+
+**Response Success: (200)**
+```json
+{
+  "message": "Cập nhật trạng thái thành công",
+  "task": {
+    "id": 1,
+    "status": "completed",
+    "completed_at": "2024-01-15T14:30:00Z"
+  },
+  "phase_progress": {
+    "phase_id": 1,
+    "progress": 75,
+    "completed_tasks": 3,
+    "total_tasks": 4
+  },
+  "goal_progress": {
+    "goal_id": 1,
+    "progress": 45,
+    "completed_phases": 1,
+    "total_phases": 3
+  }
+}
+```
+
+### Di chuyển nhiệm vụ giữa các giai đoạn
+
+```http
+PUT /api/goals/:goalId/phases/:phaseId/tasks/:taskId/move
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal, phase và task tồn tại và thuộc về user
+3. Validate phase đích tồn tại và thuộc cùng goal
+4. Cập nhật phase_id của task
+5. Cập nhật tiến độ của cả hai phase
+6. Trả về thông tin đã cập nhật
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Request Body:**
+```json
+{
+  "target_phase_id": 2
+}
+```
+
+**Response Success: (200)**
+```json
+{
+  "message": "Di chuyển nhiệm vụ thành công",
+  "task": {
+    "id": 1,
+    "title": "Học về Express.js",
+    "phase_id": 2,
+    "updated_at": "2024-01-15T15:00:00Z"
+  },
+  "source_phase": {
+    "id": 1,
+    "progress": 50
+  },
+  "target_phase": {
+    "id": 2,
+    "progress": 25
+  }
+}
+```
+
+### Thống kê nhiệm vụ trong giai đoạn
+
+```http
+GET /api/goals/:goalId/phases/:phaseId/tasks/stats
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Tính toán các chỉ số:
+   - Tổng số tasks theo trạng thái
+   - Phần trăm hoàn thành
+   - Thời gian trung bình hoàn thành
+   - Tasks quá hạn
+4. Phân tích xu hướng theo thời gian
+5. Trả về thống kê chi tiết
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Query Parameters:**
+- `start_date`: Ngày bắt đầu thống kê
+- `end_date`: Ngày kết thúc thống kê
+
+**Response Success: (200)**
+```json
+{
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản"
+  },
+  "statistics": {
+    "total_tasks": 4,
+    "completed_tasks": 3,
+    "in_progress_tasks": 1,
+    "pending_tasks": 0,
+    "overdue_tasks": 0,
+    "completion_rate": 75,
+    "average_completion_time": 120,
+    "estimated_remaining_time": 60
+  },
+  "daily_progress": [
+    {
+      "date": "2024-01-10",
+      "completed": 1,
+      "total": 4
+    },
+    {
+      "date": "2024-01-12",
+      "completed": 2,
+      "total": 4
+    },
+    {
+      "date": "2024-01-15",
+      "completed": 3,
+      "total": 4
+    }
+  ],
+  "priority_distribution": {
+    "high": 2,
+    "medium": 1,
+    "low": 1
+  }
+}
+```
+
+## Tasks Management
+
+### Quản lý nhiệm vụ theo giai đoạn mục tiêu (Goal Phase)
+
+#### Tạo nhiệm vụ trong giai đoạn
+```http
+POST /api/goals/:goalId/phases/:phaseId/tasks
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Request Body:**
+```json
+{
+  "title": "Hoàn thành bài tập về State Management",
+  "description": "Làm các bài tập về Redux",
+  "deadline": "2024-01-15T23:59:59Z",
+  "priority": "high"
+}
+```
+**Response Success: (201)**
+```json
+{
+  "message": "Tạo nhiệm vụ trong giai đoạn thành công",
+  "task": {
+    "id": 1,
+    "title": "Hoàn thành bài tập về State Management",
+    "description": "Làm các bài tập về Redux",
+    "deadline": "2024-01-15T23:59:59Z",
+    "goal_id": 1,
+    "phase_id": 1,
+    "priority": "high",
+    "status": "pending",
+    "created_at": "2024-01-10T10:00:00Z"
+  }
+}
+```
+
+#### Xem danh sách nhiệm vụ trong giai đoạn
+```http
+GET /api/goals/:goalId/phases/:phaseId/tasks
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Query Parameters:**
+- `status`: Lọc theo trạng thái (pending, in_progress, completed, cancelled)
+- `priority`: Lọc theo độ ưu tiên (low, medium, high)
+- `sort_by`: Sắp xếp theo (priority, deadline, created_at)
+
+**Response Success: (200)**
+```json
+{
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản"
+  },
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Hoàn thành bài tập về State Management",
+      "description": "Làm các bài tập về Redux",
+      "deadline": "2024-01-15T23:59:59Z",
+      "priority": "high",
+      "status": "pending",
+      "remaining_time": "2h 30m"
+    }
+  ],
+  "total": 1,
+  "filters": {
+    "status": "all",
+    "priority": "all",
+    "sort_by": "priority"
+  }
+}
+```
+
+#### Cập nhật trạng thái nhiệm vụ trong giai đoạn
+```http
+PUT /api/goals/:goalId/phases/:phaseId/tasks/:taskId/status
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Request Body:**
+```json
+{
+  "status": "completed"
+}
+```
+**Response Success: (200)**
+```json
+{
+  "message": "Cập nhật trạng thái thành công",
+  "task": {
+    "id": 1,
+    "status": "completed",
+    "completed_at": "2024-01-15T10:30:00Z"
+  },
+  "phase_progress": {
+    "phase_id": 1,
+    "progress": 75,
+    "completed_tasks": 3,
+    "total_tasks": 4
+  },
+  "goal_progress": {
+    "goal_id": 1,
+    "progress": 45,
+    "completed_phases": 1,
+    "total_phases": 3
+  }
+}
+```
+
+#### Di chuyển nhiệm vụ giữa các giai đoạn
+```http
+PUT /api/goals/:goalId/phases/:phaseId/tasks/:taskId/move
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Request Body:**
+```json
+{
+  "target_phase_id": 2
+}
+```
+**Response Success: (200)**
+```json
+{
+  "message": "Di chuyển nhiệm vụ thành công",
+  "task": {
+    "id": 1,
+    "title": "Hoàn thành bài tập về State Management",
+    "phase_id": 2,
+    "updated_at": "2024-01-15T15:00:00Z"
+  },
+  "source_phase": {
+    "id": 1,
+    "progress": 50
+  },
+  "target_phase": {
+    "id": 2,
+    "progress": 25
+  }
+}
+```
+
+#### Thống kê nhiệm vụ trong giai đoạn
+```http
+GET /api/goals/:goalId/phases/:phaseId/tasks/stats
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Query Parameters:**
+- `start_date`: Ngày bắt đầu thống kê
+- `end_date`: Ngày kết thúc thống kê
+
+**Response Success: (200)**
+```json
+{
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản"
+  },
+  "statistics": {
+    "total_tasks": 4,
+    "completed_tasks": 3,
+    "in_progress_tasks": 1,
+    "pending_tasks": 0,
+    "overdue_tasks": 0,
+    "completion_rate": 75,
+    "average_completion_time": 120,
+    "estimated_remaining_time": 60
+  },
+  "daily_progress": [
+    {
+      "date": "2024-01-10",
+      "completed": 1,
+      "total": 4
+    }
+  ],
+  "priority_distribution": {
+    "high": 2,
+    "medium": 1,
+    "low": 1
+  }
+}
+```
+
+### Quản lý nhiệm vụ tổng hợp (không phụ thuộc phase)
+
+#### Tạo nhiệm vụ không thuộc phase (tùy chọn)
+```http
+POST /api/tasks
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Request Body:**
+```json
+{
+  "title": "Nhiệm vụ độc lập",
+  "description": "Task không thuộc phase nào",
+  "deadline": "2024-01-15",
+  "goal_id": 1,
+  "priority": "medium"
+}
+```
+
+#### Xem danh sách nhiệm vụ hôm nay
+```http
+GET /api/tasks/today
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
 **Response Success: (200)**
 ```json
 {
@@ -729,38 +1480,20 @@ Authorization: Bearer jwt_token_here
 }
 ```
 
-### Cập nhật trạng thái nhiệm vụ
-
+#### Cập nhật trạng thái nhiệm vụ không thuộc phase
 ```http
 PUT /api/tasks/:id/status
 ```
-
-**Luồng xử lý:**
-1. Xác thực JWT token từ header
-2. Kiểm tra task tồn tại và thuộc về user
-3. Validate status mới hợp lệ
-4. Cập nhật trạng thái task:
-   - Cập nhật status
-   - Ghi nhận thời điểm hoàn thành (nếu status = completed)
-   - Tính toán thời gian thực tế hoàn thành
-5. Cập nhật tiến độ của goal liên quan:
-   - Tính lại số lượng tasks đã hoàn thành
-   - Cập nhật phần trăm hoàn thành của goal
-6. Gửi thông báo nếu goal đã hoàn thành
-7. Trả về thông tin đã cập nhật
-
 **Headers:**
 ```
 Authorization: Bearer jwt_token_here
 ```
-
 **Request Body:**
 ```json
 {
   "status": "completed"
 }
 ```
-
 **Response Success: (200)**
 ```json
 {
@@ -771,6 +1504,100 @@ Authorization: Bearer jwt_token_here
     "completed_at": "2024-01-15T10:30:00Z",
     "actual_duration": 90,
     "goal_progress": 65
+  }
+}
+```
+
+#### Xem thống kê nhiệm vụ tổng hợp
+```http
+GET /api/tasks/statistics
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Query Parameters:**
+- `start_date`: Ngày bắt đầu thống kê
+- `end_date`: Ngày kết thúc thống kê
+- `group_by`: Nhóm theo (day, week, month)
+
+**Response Success: (200)**
+```json
+{
+  "statistics": {
+    "total_tasks": 20,
+    "completed_tasks": 15,
+    "overdue_tasks": 2,
+    "completion_rate": 75,
+    "phase_tasks": {
+      "total": 12,
+      "completed": 9,
+      "completion_rate": 75
+    },
+    "independent_tasks": {
+      "total": 8,
+      "completed": 6,
+      "completion_rate": 75
+    },
+    "average_completion_time": 120,
+    "analysis": {
+      "peak_performance_time": "Morning (9-11 AM)",
+      "common_delays": ["Complex tasks", "Multiple dependencies"],
+      "suggestions": [
+        "Schedule complex tasks during peak performance hours",
+        "Break down large tasks into smaller subtasks",
+        "Organize tasks into phases for better progress tracking"
+      ]
+    }
+  }
+}
+```
+
+#### Lấy danh sách tất cả nhiệm vụ
+```http
+GET /api/tasks
+```
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+**Query Parameters:**
+- `goal_id`: Lọc theo mục tiêu
+- `phase_id`: Lọc theo giai đoạn
+- `status`: Lọc theo trạng thái (pending, in_progress, completed, cancelled)
+- `priority`: Lọc theo độ ưu tiên (low, medium, high)
+- `page`: Số trang (mặc định: 1)
+- `limit`: Số nhiệm vụ mỗi trang (mặc định: 10)
+
+**Response Success: (200)**
+```json
+{
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Hoàn thành bài tập về State Management",
+      "description": "Làm các bài tập về Redux",
+      "deadline": "2024-01-15T23:59:59Z",
+      "goal_id": 1,
+      "phase_id": 1,
+      "goal_title": "Học lập trình mobile",
+      "phase_title": "Giai đoạn 1: Học cơ bản",
+      "priority": "high",
+      "status": "pending",
+      "created_at": "2024-01-10T10:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "total_pages": 3
+  },
+  "filters": {
+    "goal_id": null,
+    "phase_id": null,
+    "status": "all",
+    "priority": "all"
   }
 }
 ```
@@ -887,12 +1714,6 @@ Authorization: Bearer jwt_token_here
         "completed": 3,
         "total": 4,
         "average_completion_time": 95
-      },
-      {
-        "date": "2024-01-15",
-        "completed": 4,
-        "total": 5,
-        "average_completion_time": 85
       }
     ],
     "analysis": {
@@ -941,6 +1762,223 @@ Authorization: Bearer jwt_token_here
   "details": {
     "email": "Email không đúng định dạng",
     "password": "Mật khẩu phải có ít nhất 8 ký tự"
+  }
+}
+```
+
+### Tổng hợp tiến độ mục tiêu với giai đoạn
+
+```http
+GET /api/goals/:goalId/progress-with-phases
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal tồn tại và thuộc về user
+3. Lấy thông tin chi tiết goal
+4. Lấy danh sách tất cả phases của goal
+5. Tính toán tiến độ của từng phase
+6. Tính toán tiến độ tổng thể của goal
+7. Phân tích timeline và dự đoán
+8. Trả về thông tin tổng hợp
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Response Success: (200)**
+```json
+{
+  "goal": {
+    "id": 1,
+    "name": "Học lập trình Node.js",
+    "description": "Học lập trình Node.js trong 3 tháng",
+    "deadline": "2024-03-31",
+    "priority": "high",
+    "status": "in_progress",
+    "overall_progress": 45
+  },
+  "phases": [
+    {
+      "id": 1,
+      "title": "Giai đoạn 1: Học cơ bản",
+      "order_number": 1,
+      "progress": 75,
+      "total_tasks": 4,
+      "completed_tasks": 3,
+      "status": "in_progress"
+    },
+    {
+      "id": 2,
+      "title": "Giai đoạn 2: Thực hành",
+      "order_number": 2,
+      "progress": 25,
+      "total_tasks": 6,
+      "completed_tasks": 1,
+      "status": "in_progress"
+    },
+    {
+      "id": 3,
+      "title": "Giai đoạn 3: Nâng cao",
+      "order_number": 3,
+      "progress": 0,
+      "total_tasks": 8,
+      "completed_tasks": 0,
+      "status": "not_started"
+    }
+  ],
+  "analysis": {
+    "estimated_completion_date": "2024-03-15",
+    "on_track": true,
+    "next_milestone": "Hoàn thành Giai đoạn 2",
+    "suggestions": [
+      "Tăng tốc độ hoàn thành Giai đoạn 2",
+      "Chuẩn bị sớm cho Giai đoạn 3"
+    ]
+  }
+}
+```
+
+### Lấy roadmap chi tiết của mục tiêu
+
+```http
+GET /api/goals/:goalId/roadmap
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal tồn tại và thuộc về user
+3. Lấy tất cả phases theo thứ tự
+4. Lấy tasks của từng phase
+5. Tính toán timeline và dependencies
+6. Tạo roadmap chi tiết
+7. Trả về roadmap
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Response Success: (200)**
+```json
+{
+  "goal": {
+    "id": 1,
+    "name": "Học lập trình Node.js",
+    "deadline": "2024-03-31"
+  },
+  "roadmap": [
+    {
+      "phase": {
+        "id": 1,
+        "title": "Giai đoạn 1: Học cơ bản",
+        "order_number": 1,
+        "progress": 75
+      },
+      "tasks": [
+        {
+          "id": 1,
+          "title": "Học về Node.js cơ bản",
+          "status": "completed",
+          "deadline": "2024-01-10"
+        },
+        {
+          "id": 2,
+          "title": "Học về Express.js",
+          "status": "completed",
+          "deadline": "2024-01-15"
+        },
+        {
+          "id": 3,
+          "title": "Học về Middleware",
+          "status": "in_progress",
+          "deadline": "2024-01-20"
+        },
+        {
+          "id": 4,
+          "title": "Học về Routing",
+          "status": "pending",
+          "deadline": "2024-01-25"
+        }
+      ],
+      "milestone": "Hoàn thành kiến thức cơ bản"
+    },
+    {
+      "phase": {
+        "id": 2,
+        "title": "Giai đoạn 2: Thực hành",
+        "order_number": 2,
+        "progress": 25
+      },
+      "tasks": [
+        {
+          "id": 5,
+          "title": "Tạo REST API đơn giản",
+          "status": "completed",
+          "deadline": "2024-02-05"
+        },
+        {
+          "id": 6,
+          "title": "Tích hợp database",
+          "status": "in_progress",
+          "deadline": "2024-02-15"
+        }
+      ],
+      "milestone": "Có khả năng tạo ứng dụng cơ bản"
+    }
+  ],
+  "timeline": {
+    "start_date": "2024-01-01",
+    "end_date": "2024-03-31",
+    "total_duration": "90 days",
+    "remaining_duration": "45 days"
+  }
+}
+```
+
+### Cập nhật tiến độ giai đoạn tự động
+
+```http
+PUT /api/goals/:goalId/phases/:phaseId/auto-progress
+```
+
+**Luồng xử lý:**
+1. Xác thực JWT token từ header
+2. Kiểm tra goal và phase tồn tại và thuộc về user
+3. Tính toán tiến độ dựa trên tasks đã hoàn thành
+4. Cập nhật trạng thái phase (not_started, in_progress, completed)
+5. Cập nhật tiến độ tổng thể của goal
+6. Gửi thông báo nếu phase hoàn thành
+7. Trả về thông tin đã cập nhật
+
+**Headers:**
+```
+Authorization: Bearer jwt_token_here
+```
+
+**Response Success: (200)**
+```json
+{
+  "message": "Cập nhật tiến độ giai đoạn thành công",
+  "phase": {
+    "id": 1,
+    "title": "Giai đoạn 1: Học cơ bản",
+    "progress": 100,
+    "status": "completed",
+    "completed_tasks": 4,
+    "total_tasks": 4
+  },
+  "goal_progress": {
+    "goal_id": 1,
+    "progress": 60,
+    "completed_phases": 2,
+    "total_phases": 3
+  },
+  "next_phase": {
+    "id": 2,
+    "title": "Giai đoạn 2: Thực hành",
+    "status": "in_progress"
   }
 }
 ```
