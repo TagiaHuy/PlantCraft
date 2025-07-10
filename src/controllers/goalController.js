@@ -307,7 +307,11 @@ const getGoalStats = async (req, res) => {
     const userId = req.user.id;
     const stats = await GoalModel.getGoalStats(userId);
 
-    res.status(200).json(stats[0]);
+    // Đảm bảo stats là một mảng và có dữ liệu
+    const statsArray = Array.isArray(stats) ? stats : [];
+    const statsData = statsArray.length > 0 ? statsArray[0] : {};
+
+    res.status(200).json(statsData);
   } catch (error) {
     console.error('Error fetching goal stats:', error);
     res.status(500).json({ message: 'Lỗi khi lấy thống kê tiến độ mục tiêu.' });
@@ -332,9 +336,12 @@ const getProgressWithPhases = async (req, res) => {
     const GoalPhaseModel = require('../models/goalPhaseModel');
     const phases = await GoalPhaseModel.getPhasesByGoalId(goalId, userId);
 
+    // Đảm bảo phases là một mảng
+    const phasesArray = Array.isArray(phases) ? phases : [];
+
     // Tính toán tiến độ tổng thể
-    const totalPhases = phases.length;
-    const completedPhases = phases.filter(p => p.status === 'completed').length;
+    const totalPhases = phasesArray.length;
+    const completedPhases = phasesArray.filter(p => p.status === 'completed').length;
     const overallProgress = totalPhases > 0 ? Math.round((completedPhases / totalPhases) * 100) : 0;
 
     // Phân tích và dự đoán
@@ -345,14 +352,14 @@ const getProgressWithPhases = async (req, res) => {
       suggestions: []
     };
 
-    if (phases.length > 0) {
-      const nextPhase = phases.find(p => p.status !== 'completed');
+    if (phasesArray.length > 0) {
+      const nextPhase = phasesArray.find(p => p.status !== 'completed');
       if (nextPhase) {
         analysis.next_milestone = `Hoàn thành ${nextPhase.title}`;
       }
 
       // Tính toán dự đoán thời gian hoàn thành
-      const remainingPhases = phases.filter(p => p.status !== 'completed').length;
+      const remainingPhases = phasesArray.filter(p => p.status !== 'completed').length;
       if (remainingPhases > 0) {
         const avgDaysPerPhase = 7; // Giả sử trung bình 7 ngày/phase
         const estimatedDays = remainingPhases * avgDaysPerPhase;
@@ -365,22 +372,22 @@ const getProgressWithPhases = async (req, res) => {
       if (overallProgress < 50) {
         analysis.suggestions.push('Tăng tốc độ hoàn thành để đạt deadline');
       }
-      if (phases.some(p => p.status === 'not_started')) {
+      if (phasesArray.some(p => p.status === 'not_started')) {
         analysis.suggestions.push('Bắt đầu các giai đoạn chưa thực hiện');
       }
     }
 
     res.json({
       goal: {
-        id: goal.id,
-        name: goal.name,
-        description: goal.description,
-        deadline: goal.deadline,
-        priority: goal.priority,
-        status: goal.status,
+        id: goal.id || null,
+        name: goal.name || '',
+        description: goal.description || '',
+        deadline: goal.deadline || null,
+        priority: goal.priority || '',
+        status: goal.status || '',
         overall_progress: overallProgress
       },
-      phases,
+      phases: phasesArray,
       analysis
     });
   } catch (error) {
@@ -409,34 +416,37 @@ const getGoalRoadmap = async (req, res) => {
     const GoalPhaseModel = require('../models/goalPhaseModel');
     const phases = await GoalPhaseModel.getPhasesByGoalId(goalId, userId);
 
+    // Đảm bảo phases là một mảng
+    const phasesArray = Array.isArray(phases) ? phases : [];
+
     // Lấy tasks cho từng phase
     const TaskModel = require('../models/taskModel');
     const roadmap = await Promise.all(
-      phases.map(async (phase) => {
+      phasesArray.map(async (phase) => {
         const tasks = await TaskModel.getTasksByPhaseId(phase.id);
         
         return {
           phase: {
-            id: phase.id,
-            title: phase.title,
-            order_number: phase.order_number,
-            progress: phase.progress
+            id: phase.id || null,
+            title: phase.title || '',
+            order_number: phase.order_number || 0,
+            progress: phase.progress || 0
           },
-          tasks: tasks.map(task => ({
-            id: task.id,
-            title: task.title,
-            status: task.status,
-            deadline: task.deadline
-          })),
-          milestone: `Hoàn thành ${phase.title}`
+          tasks: Array.isArray(tasks) ? tasks.map(task => ({
+            id: task.id || null,
+            title: task.title || '',
+            status: task.status || '',
+            deadline: task.deadline || null
+          })) : [],
+          milestone: `Hoàn thành ${phase.title || 'Giai đoạn'}`
         };
       })
     );
 
     // Tính toán timeline
     const timeline = {
-      start_date: goal.created_at ? goal.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
-      end_date: goal.deadline,
+      start_date: (goal.created_at && typeof goal.created_at === 'string') ? goal.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      end_date: goal.deadline || null,
       total_duration: null,
       remaining_duration: null
     };
@@ -453,9 +463,9 @@ const getGoalRoadmap = async (req, res) => {
 
     res.json({
       goal: {
-        id: goal.id,
-        name: goal.name,
-        deadline: goal.deadline
+        id: goal.id || null,
+        name: goal.name || '',
+        deadline: goal.deadline || null
       },
       roadmap,
       timeline
