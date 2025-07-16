@@ -267,13 +267,8 @@ const getCompletedGoals = async (req, res) => {
     // Gọi hàm model để lấy các mục tiêu hoàn thành của người dùng
     const completedGoals = await GoalModel.getCompletedGoals(userId);
 
-    // Kiểm tra nếu không có mục tiêu hoàn thành nào
-    if (completedGoals.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy mục tiêu hoàn thành.' });
-    }
-
-    // Trả về các mục tiêu hoàn thành
-    res.status(200).json(completedGoals);
+    // Trả về mảng rỗng nếu không có mục tiêu hoàn thành
+    return res.status(200).json(completedGoals);
   } catch (error) {
     console.error('Error fetching completed goals:', error);
     res.status(500).json({ message: 'Lỗi khi lấy mục tiêu hoàn thành.' });
