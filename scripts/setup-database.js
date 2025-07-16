@@ -73,6 +73,7 @@ const setupDatabase = async () => {
     // Separate CREATE TABLE and CREATE INDEX statements
     const createTableStatements = [];
     const createIndexStatements = [];
+    const otherStatements = [];
 
     for (const statement of statements) {
       const upperStatement = statement.toUpperCase();
@@ -80,6 +81,8 @@ const setupDatabase = async () => {
         createTableStatements.push(statement);
       } else if (upperStatement.includes('CREATE INDEX')) {
         createIndexStatements.push(statement);
+      } else if (statement.length > 0) {
+        otherStatements.push(statement);
       }
     }
 
@@ -121,6 +124,28 @@ const setupDatabase = async () => {
         } else {
           errorCount++;
           console.error(`❌ Error creating index ${i + 1}:`, error.message);
+        }
+      }
+    }
+
+    // Execute other statements (INSERT, etc.)
+    console.log('\n📝 Executing other SQL statements (INSERT, etc.)...');
+    for (let i = 0; i < otherStatements.length; i++) {
+      const statement = otherStatements[i];
+      if (!statement) continue;
+      console.log(`🟢 Executing [${i + 1}/${otherStatements.length}]: ${statement}`);
+      try {
+        await mainPool.execute(statement);
+        successCount++;
+        console.log(`✅ Executed statement ${i + 1}/${otherStatements.length}`);
+      } catch (error) {
+        if (error.message.includes('Duplicate entry') || error.message.includes('already exists')) {
+          console.log(`⚠️  Statement ${i + 1} already executed or duplicate`);
+          successCount++;
+        } else {
+          errorCount++;
+          console.error(`❌ Error executing statement ${i + 1}:`, error.message);
+          console.error(`   SQL: ${statement}`);
         }
       }
     }

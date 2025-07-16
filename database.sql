@@ -115,3 +115,54 @@ CREATE INDEX idx_user_id_history ON user_update_history(user_id);
 CREATE INDEX idx_updated_at_history ON user_update_history(updated_at);
 CREATE INDEX idx_update_type_history ON user_update_history(update_type);
 
+-- USERS
+INSERT INTO users (id, name, email, password_hash, avatar_url, is_email_verified) VALUES
+(12345, 'Admin', 'admin@example.com', '$2b$10$wH8QwQwQwQwQwQwQwQwQwOQwQwQwQwQwQwQwQwQwQwQwQwQwQ', NULL, 1),
+(23456, 'User Đã Xác Thực', 'user1@example.com', '$2b$10$hashuser1', NULL, 1),
+(34567, 'User Chưa Xác Thực', 'user2@example.com', '$2b$10$hashuser2', NULL, 0);
+
+-- PENDING REGISTRATIONS
+INSERT INTO pending_registrations (name, email, password_hash, verification_token, expires_at)
+VALUES
+('User Chờ Xác Thực', 'pending@example.com', '$2b$10$hashpending', 'tokenpending', DATE_ADD(NOW(), INTERVAL 1 DAY));
+
+-- GOAL GROUPS
+INSERT INTO goal_groups (id, name, description, user_id) VALUES
+(10001, 'Quản trị hệ thống', 'Nhóm mục tiêu dành cho admin', 12345),
+(10002, 'Cá nhân', 'Nhóm mục tiêu cá nhân', 12345);
+
+-- GOALS
+INSERT INTO goals (id, name, description, deadline, priority, status, progress, group_id, user_id) VALUES
+(20001, 'Thiết lập hệ thống', 'Hoàn thiện cấu hình hệ thống cho toàn bộ tổ chức', '2024-12-31', 'high', 'in_progress', 50, 10001, 12345),
+(20002, 'Học React', 'Hoàn thành khóa học ReactJS', '2024-08-15', 'medium', 'not_started', 0, 10002, 12345),
+(20003, 'Đọc sách', 'Đọc xong 5 cuốn sách', '2024-09-01', 'low', 'completed', 100, NULL, 12345),
+(20004, 'Bỏ thuốc', 'Cai thuốc lá', '2024-10-01', 'high', 'cancelled', 0, NULL, 12345);
+
+-- GOAL PHASES
+INSERT INTO goal_phases (id, goal_id, title, description, order_number) VALUES
+(30001, 20001, 'Cài đặt server', 'Cài đặt và cấu hình server vật lý/ảo', 1),
+(30002, 20001, 'Thiết lập bảo mật', 'Cấu hình firewall, SSL, phân quyền truy cập', 2),
+(30003, 20002, 'Học lý thuyết', 'Nắm vững kiến thức cơ bản', 1),
+(30004, 20002, 'Làm project', 'Xây dựng project thực tế', 2);
+
+-- TASKS
+INSERT INTO tasks (id, goal_id, phase_id, user_id, title, description, deadline, priority, status) VALUES
+(40001, 20001, 30001, 12345, 'Cài đặt Ubuntu Server', 'Cài đặt hệ điều hành cho server', '2024-06-20 09:00:00', 'high', 'completed'),
+(40002, 20001, 30001, 12345, 'Cấu hình SSH', 'Thiết lập truy cập SSH an toàn', '2024-06-21 10:00:00', 'medium', 'in_progress'),
+(40003, 20001, 30002, 12345, 'Cài đặt SSL', 'Cài đặt chứng chỉ SSL cho hệ thống', '2024-06-25 15:00:00', 'high', 'pending'),
+(40004, 20001, 30002, 12345, 'Cấu hình firewall', 'Thiết lập tường lửa bảo vệ server', '2024-06-26 16:00:00', 'medium', 'pending'),
+(40005, 20002, 30003, 12345, 'Xem video React', 'Xem 3 video đầu tiên', '2024-06-12 20:00:00', 'medium', 'pending'),
+(40006, 20002, 30004, 12345, 'Làm mini project', 'Tạo app ToDo với React', '2024-06-20 21:00:00', 'high', 'pending'),
+(40007, 20003, NULL, 12345, 'Đọc sách 1', 'Đọc xong sách 1', '2024-07-01 21:00:00', 'medium', 'completed'),
+(40008, 20003, NULL, 12345, 'Đọc sách 2', 'Đọc xong sách 2', '2024-07-10 21:00:00', 'medium', 'completed'),
+(40009, 20004, NULL, 12345, 'Không hút thuốc ngày 1', 'Bỏ thuốc ngày đầu', '2024-06-01 21:00:00', 'high', 'cancelled');
+
+-- -- ACTIVE SESSIONS
+-- INSERT INTO active_sessions (user_id, token, status) VALUES
+-- (12345, 'token-admin', 'active'),
+-- (23456, 'token-user1', 'active');
+
+-- -- USER UPDATE HISTORY
+-- INSERT INTO user_update_history (user_id, update_type, old_value, new_value, changed_by_role, reason, ip_address, user_agent) VALUES
+-- (23456, 'Cập nhật tên', 'User Đã Xác Thực', 'User Đã Xác Thực+', 'user', 'Muốn đổi tên', '127.0.0.1', 'Mozilla/5.0');
+
