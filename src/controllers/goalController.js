@@ -419,7 +419,16 @@ const getGoalRoadmap = async (req, res) => {
     const roadmap = await Promise.all(
       phasesArray.map(async (phase) => {
         const tasks = await TaskModel.getTasksByPhaseId(phase.id);
-        
+        // Đảm bảo tasks luôn là mảng
+        let tasksArray = [];
+        if (Array.isArray(tasks)) {
+          tasksArray = tasks;
+        } else if (tasks && typeof tasks === 'object') {
+          tasksArray = [tasks];
+        } else {
+          tasksArray = [];
+        }
+        console.log("this is task", tasksArray);
         return {
           phase: {
             id: phase.id || null,
@@ -427,12 +436,12 @@ const getGoalRoadmap = async (req, res) => {
             order_number: phase.order_number || 0,
             progress: phase.progress || 0
           },
-          tasks: Array.isArray(tasks) ? tasks.map(task => ({
+          tasks: tasksArray.map(task => ({
             id: task.id || null,
             title: task.title || '',
             status: task.status || '',
             deadline: task.deadline || null
-          })) : [],
+          })),
           milestone: `Hoàn thành ${phase.title || 'Giai đoạn'}`
         };
       })

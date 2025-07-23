@@ -23,10 +23,10 @@ const TaskController = {
             }
 
             // Validate priority
-            const validPriorities = ['low', 'medium', 'high'];
+            const validPriorities = ['Low', 'Medium', 'High'];
             if (priority && !validPriorities.includes(priority)) {
                 return res.status(400).json({
-                    message: "Priority phải là: low, medium, hoặc high"
+                    message: "Priority phải là: Low, Medium, hoặc High"
                 });
             }
 

@@ -67,7 +67,7 @@ const TaskModel = {
                 ORDER BY t.priority DESC, t.deadline ASC
             `;
             
-            const [rows] = await db.query(query, [userId, startOfDay, endOfDay]);
+            const rows = await db.query(query, [userId, startOfDay, endOfDay]);
             return rows;
         } catch (error) {
             throw error;
@@ -180,8 +180,9 @@ const TaskModel = {
             }
 
             query += ` ORDER BY ${orderBy}`;
-            
-            const [rows] = await db.query(query, params);
+            const rows = await db.query(query, params);
+            console.log("row:", rows);
+            // console.log("asdf" + await db.query(query, params));
             return rows;
         } catch (error) {
             throw error;
