@@ -55,7 +55,7 @@ const TaskModel = {
             const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
 
-            const query = `
+            const query = `  
                 SELECT t.*, g.name as goal_title, gp.title as phase_title,
                        TIMESTAMPDIFF(MINUTE, NOW(), t.deadline) as remaining_minutes
                 FROM tasks t 
