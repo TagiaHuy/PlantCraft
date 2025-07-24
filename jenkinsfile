@@ -36,7 +36,7 @@ pipeline {
             steps {
                 echo 'Deploying application'
                 // Nếu muốn chạy container, thêm lệnh dưới:
-                sh 'docker run -d -p 3000:3000 --name plancraft_container plancraft'
+                sh 'docker run -d -p 3000:3000 --name plancraft_container -e DB_HOST=mysql -e DB_USER=root -e DB_PASSWORD=88888888 -e DB_NAME=plancraft plancraft'
                 // bat 'npm start'
             }
         } 

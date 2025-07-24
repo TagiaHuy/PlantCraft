@@ -4,9 +4,12 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm run init
+COPY scripts ./scripts
+
+RUN npm install
 
 COPY . .
+
 
 EXPOSE 3000
 

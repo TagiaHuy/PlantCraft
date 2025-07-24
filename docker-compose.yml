@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASSWORD=8888888
+      - DB_NAME=plancraft
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=88888888
+      - MYSQL_DATABASE=plancraft
+    ports:
+      - "3306:3306" # Optional, for external access
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
