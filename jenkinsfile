@@ -12,14 +12,14 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 echo 'Installing npm packages'
-                bat 'npm install'
+                sh 'npm install'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
-                bat 'docker build -t plancraft .'
+                sh 'docker build -t plancraft .'
             }
         }
 
@@ -35,7 +35,7 @@ pipeline {
             steps {
                 echo 'Deploying application'
                 // Nếu muốn chạy container, thêm lệnh dưới:
-                bat 'docker run -d -p 3000:3000 --name plancraft_container plancraft'
+                sh 'docker run -d -p 3000:3000 --name plancraft_container plancraft'
                 // bat 'npm start'
             }
         } 
