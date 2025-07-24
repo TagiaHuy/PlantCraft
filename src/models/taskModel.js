@@ -61,8 +61,8 @@ const TaskModel = {
                 FROM tasks t 
                 LEFT JOIN goals g ON t.goal_id = g.id 
                 LEFT JOIN goal_phases gp ON t.phase_id = gp.id
-                WHERE t.user_id = ? 
-                AND t.deadline BETWEEN ? AND ?
+                WHERE t.user_id = ?  
+                AND t.deadline BETWEEN ? AND ?   
                 AND t.status != 'completed'
                 ORDER BY t.priority DESC, t.deadline ASC
             `;
