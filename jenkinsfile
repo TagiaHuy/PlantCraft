@@ -18,11 +18,12 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                sh 'newgrp docker'
                 echo 'Building Docker image'
                 sh 'docker build -t plancraft .'
             }
         }
-
+    
         // stage('Test') {
         //     steps {
         //         echo 'Running tests'
