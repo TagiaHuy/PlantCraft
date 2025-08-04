@@ -71,7 +71,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying application'
-                sh "docker rm -f $(docker ps -aq) || true" // Xoá tất cả container đang chạy để tránh xung đột
+                sh "docker rm -f \$(docker ps -aq) || true"
 
                 // Nếu muốn chạy container, thêm lệnh dưới:
                 sh "docker run -d -p 3000:3000 --name plancraft_${env.CUSTOM_BUILD_VERSION} plancraft"
