@@ -82,15 +82,15 @@ pipeline {
         stage('Login & Push Docker Image') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS_ID}", usernameVariable: 'tagiahuy', passwordVariable: 'Huyta@2605')]) {
+                    withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS_ID}", usernameVariable: 'tagiahuy2605@gmail.com', passwordVariable: 'Huyta@2605')]) {
                         // sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
                         // sh "docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
                         // sh "docker push ${DOCKER_IMAGE_NAME}:latest"
                         sh """
-                                echo \$Huyta@2605 | docker login -u \$tagiahuy --password-stdin
+                                echo \$Huyta@2605 | docker login -u \$tagiahuy2605@gmail.com --password-stdin
                                 docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
                                 docker push ${DOCKER_IMAGE_NAME}:latest
-                                echo "DOCKER_USER=\$tagiahuy"
+                                echo "DOCKER_USER=\$tagiahuy2605@gmail.com"
                         """
 
                     }
