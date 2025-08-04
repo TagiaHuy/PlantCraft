@@ -17,7 +17,7 @@ Tài liệu này mô tả chi tiết về cấu trúc và quản lý cơ sở d�
 -- Bảng users
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) COMMENT 'Tên người dùng',
+    name VARCHAR(100) COMMENT 'Tên người Ví dụ như: Users, Tasks, Goals?dùng',
     email VARCHAR(100) NOT NULL UNIQUE COMMENT 'Địa chỉ email (không được trùng, không được để trống)',
     password_hash TEXT COMMENT 'Mã hóa mật khẩu',
     avatar_url TEXT COMMENT 'URL ảnh đại diện',
@@ -107,28 +107,6 @@ CREATE INDEX idx_goal_tasks ON tasks(goal_id);
 CREATE INDEX idx_phase_tasks ON tasks(phase_id);
 CREATE INDEX idx_task_status ON tasks(status);
 CREATE INDEX idx_task_deadline ON tasks(deadline);
-```
-
-### Bảng Plants
-```sql
-CREATE TABLE plants (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  name VARCHAR(100) NOT NULL,
-  species VARCHAR(100),
-  description TEXT,
-  planting_date DATE,
-  watering_frequency INT,
-  last_watered_at DATETIME,
-  notes TEXT,
-  image_url VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
--- Indexes
-CREATE INDEX idx_user_plants ON plants(user_id);
 ```
 
 ## Quan Hệ Giữa Các Bảng

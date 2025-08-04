@@ -297,21 +297,24 @@ const createGoalGroup = async (req, res) => {
 };
 
 // Thống kê tiến độ mục tiêu
+// Thống kê tiến độ mục tiêu
 const getGoalStats = async (req, res) => {
   try {
     const userId = req.user.id;
     const stats = await GoalModel.getGoalStats(userId);
 
-    // Đảm bảo stats là một mảng và có dữ liệu
-    const statsArray = Array.isArray(stats) ? stats : [];
-    const statsData = statsArray.length > 0 ? statsArray[0] : {};
+    // Trường hợp không lấy được dữ liệu
+    if (!stats) {
+      return res.status(404).json({ message: 'Không tìm thấy dữ liệu thống kê.' });
+    }
 
-    res.status(200).json(statsData);
+    res.status(200).json(stats);
   } catch (error) {
     console.error('Error fetching goal stats:', error);
     res.status(500).json({ message: 'Lỗi khi lấy thống kê tiến độ mục tiêu.' });
   }
 };
+
 
 // Xem tiến độ mục tiêu với giai đoạn
 const getProgressWithPhases = async (req, res) => {

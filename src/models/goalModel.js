@@ -205,7 +205,8 @@ const GoalModel = {
   // Thống kê tiến độ mục tiêu
   getGoalStats: async (userId) => {
     try {
-      const query = `
+      // Câu truy vấn mục tiêu (goals)
+      const goalQuery = `
         SELECT 
           COUNT(*) AS totalGoals,
           SUM(status = 'completed') AS completedGoals,
@@ -214,8 +215,26 @@ const GoalModel = {
         FROM goals
         WHERE user_id = ?
       `;
-      const result = await db.query(query, [userId]);
-      return result;
+
+      // Câu truy vấn nhiệm vụ (tasks)
+      const taskQuery = `
+        SELECT 
+          COUNT(*) AS totalTasks,
+          SUM(status = 'completed') AS completedTasks,
+          SUM(status = 'in_progress') AS inProgressTasks,
+          SUM(status = 'not_started') AS notStartedTasks
+        FROM tasks
+        WHERE user_id = ?
+      `;
+
+      // Thực hiện từng câu truy vấn riêng biệt
+      const goalResult = await db.query(goalQuery, [userId]);
+      const taskResult = await db.query(taskQuery, [userId]);
+
+      return {
+        ...goalResult[0],
+        ...taskResult[0]
+      };
     } catch (error) {
       console.error('Error fetching goal stats:', error);
       throw new Error('Không thể lấy thống kê mục tiêu');

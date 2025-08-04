@@ -398,7 +398,7 @@ const TaskModel = {
             console.log('getAllTasks query:', query);
             console.log('getAllTasks params:', params);
             
-            const [tasks] = await db.query(query, params);
+            const tasks = await db.query(query, params);
             console.log('tasks:', tasks);
 
             return {
