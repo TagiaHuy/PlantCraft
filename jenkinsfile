@@ -87,10 +87,10 @@ pipeline {
                         // sh "docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
                         // sh "docker push ${DOCKER_IMAGE_NAME}:latest"
                         sh """
-                                echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                                echo \$Huyta@2605 | docker login -u \$tagiahuy --password-stdin
                                 docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
                                 docker push ${DOCKER_IMAGE_NAME}:latest
-                                echo "DOCKER_USER=\$DOCKER_USER"
+                                echo "DOCKER_USER=\$tagiahuy"
                         """
 
                     }
