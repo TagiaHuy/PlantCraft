@@ -83,14 +83,14 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS_ID}", usernameVariable: 'tagiahuy', passwordVariable: 'Huyta@2605')]) {
-                        sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-                        sh "docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
-                        sh "docker push ${DOCKER_IMAGE_NAME}:latest"
-                        // sh """
-                        //         echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-                        //         docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
-                        //         docker push ${DOCKER_IMAGE_NAME}:latest
-                        // """
+                        // sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
+                        // sh "docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
+                        // sh "docker push ${DOCKER_IMAGE_NAME}:latest"
+                        sh """
+                                echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                                docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
+                                docker push ${DOCKER_IMAGE_NAME}:latest
+                        """
 
                     }
                 }
