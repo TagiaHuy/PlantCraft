@@ -71,8 +71,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying application'
+                sh "docker rm -f plancraft_${env.CUSTOM_BUILD_VERSION} || true"
+
                 // Nếu muốn chạy container, thêm lệnh dưới:
-                sh 'docker run -d -p 3000:3000 --name plancraft_container plancraft'
+                sh "docker run -d -p 3000:3000 --name plancraft_${env.CUSTOM_BUILD_VERSION} plancraft"
                 // bat 'npm start'
             }
         } 
