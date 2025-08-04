@@ -90,7 +90,7 @@ pipeline {
                                 echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
                                 docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
                                 docker push ${DOCKER_IMAGE_NAME}:latest
-                                echo "DOCKER_USER=$DOCKER_USER"
+                                echo "DOCKER_USER=\$DOCKER_USER"
                         """
 
                     }
