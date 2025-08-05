@@ -1,94 +1,3 @@
-// pipeline {
-//     agent any
-
-//     environment {
-//         DOCKER_IMAGE_NAME = "tagiahuy/plancraft"
-//         DOCKERHUB_CREDENTIALS_ID = "12345"
-//         BUILD_VERSION_FILE = "build_version.txt"
-//     }
-
-//     stages {
-//         stage('Checkout & Versioning') {
-//             steps {
-//                 script {
-//                     checkout scm
-
-//                     if (!fileExists(BUILD_VERSION_FILE)) {
-//                         writeFile file: BUILD_VERSION_FILE, text: '0'
-//                     }
-
-//                     def currentVersion = readFile(BUILD_VERSION_FILE).trim().toInteger()
-//                     def nextVersion = currentVersion + 1
-//                     writeFile file: BUILD_VERSION_FILE, text: nextVersion.toString()
-//                     env.CUSTOM_BUILD_VERSION = nextVersion.toString()
-
-//                     echo "🔢 Build version: ${env.CUSTOM_BUILD_VERSION}"
-//                 }
-//             }
-//         }
-
-//         stage('Build Docker Image') {
-//             steps {
-//                 echo "🐳 Building Docker image: ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
-//                 sh """
-//                     docker build -t ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION} .
-//                     docker tag ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION} ${DOCKER_IMAGE_NAME}:latest
-//                 """
-//             }
-//         }
-
-//         stage('Test') {
-//             steps {
-//                 echo '🧪 Running tests'
-//                 sh 'npm test'
-//             } 
-//         }
-
-//         stage('Deploy') {
-//             steps {
-//                 echo "🚀 Deploying application"
-//                 sh '''
-//                     CONTAINER_ID=$(docker ps -q --filter "publish=3000")
-//                     if [ ! -z "$CONTAINER_ID" ]; then
-//                         docker stop $CONTAINER_ID
-//                         docker rm $CONTAINER_ID
-//                     fi
-//                 '''
-
-//                 sh """
-//                     docker rm -f plancraft || true
-//                     docker run -d -p 3000:3000 --name plancraft ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
-//                 """
-//             }
-//         }
-
-//         stage('Login & Push Docker Image') {
-//             steps {
-//                 withCredentials([usernamePassword(
-//                     credentialsId: "${DOCKERHUB_CREDENTIALS_ID}",
-//                     usernameVariable: 'DOCKER_USER',
-//                     passwordVariable: 'DOCKER_PASS'
-//                 )]) {
-//                     echo "🔐 Logging in and pushing image to Docker Hub"
-//                     sh """
-//                         echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-//                         docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
-//                         docker push ${DOCKER_IMAGE_NAME}:latest
-//                     """
-//                 }
-//             }
-//         }
-//     }
-
-//     post {
-//         always {
-//             echo "🔓 Logging out from Docker Hub"
-//             sh 'docker logout'
-//         }
-//     }
-// }
-
-
 pipeline {
     agent any
 
@@ -96,7 +5,6 @@ pipeline {
         DOCKER_IMAGE_NAME = "tagiahuy/plancraft"
         DOCKERHUB_CREDENTIALS_ID = "12345"
         BUILD_VERSION_FILE = "build_version.txt"
-        COMPOSE_FILE = 'docker-compose.yml'
     }
 
     stages {
@@ -119,13 +27,6 @@ pipeline {
             }
         }
 
-        stage('Start Services') {
-            steps {
-                echo "🔌 Starting MySQL with Docker Compose"
-                sh 'docker-compose up'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 echo "🐳 Building Docker image: ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
@@ -138,7 +39,7 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo '🧪 Running tests with MySQL running'
+                echo '🧪 Running tests'
                 sh 'npm test'
             } 
         }
@@ -153,6 +54,7 @@ pipeline {
                         docker rm $CONTAINER_ID
                     fi
                 '''
+
                 sh """
                     docker rm -f plancraft || true
                     docker run -d -p 3000:3000 --name plancraft ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
@@ -180,8 +82,7 @@ pipeline {
 
     post {
         always {
-            echo "🧹 Cleaning up Docker Compose and logging out"
-            sh 'docker-compose down -v || true'
+            echo "🔓 Logging out from Docker Hub"
             sh 'docker logout'
         }
     }
