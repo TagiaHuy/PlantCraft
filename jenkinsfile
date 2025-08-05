@@ -3,27 +3,22 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_NAME = "tagiahuy/plancraft"
-        DOCKERHUB_CREDENTIALS_ID = "12345" // ID của credentials đã cấu hình trong Jenkins
+        DOCKERHUB_CREDENTIALS_ID = "12345"
         BUILD_VERSION_FILE = "build_version.txt"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Read & Increment Build Version') {
+        stage('Checkout & Versioning') {
             steps {
                 script {
+                    checkout scm
+
                     if (!fileExists(BUILD_VERSION_FILE)) {
                         writeFile file: BUILD_VERSION_FILE, text: '0'
                     }
 
                     def currentVersion = readFile(BUILD_VERSION_FILE).trim().toInteger()
                     def nextVersion = currentVersion + 1
-
                     writeFile file: BUILD_VERSION_FILE, text: nextVersion.toString()
                     env.CUSTOM_BUILD_VERSION = nextVersion.toString()
 
@@ -32,76 +27,64 @@ pipeline {
             }
         }
 
-
-        stage('Clone') {
-            steps {
-                echo 'Cloning source code'
-                git branch: 'main', url: 'https://github.com/TagiaHuy/PlantCraft.git'
-            }
-        }
-
         stage('Install dependencies') {
             steps {
-                echo 'Installing npm packages'
+                echo '📦 Installing npm packages'
                 sh 'npm install'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    // sh 'newgrp docker'
-                    // echo 'Building Docker image'
-                    // sh 'docker build -t plancraft .'
-                    sh "docker build -t ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION} ."
-                    sh "docker tag ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION} ${DOCKER_IMAGE_NAME}:latest"
-
-                }
+                echo "🐳 Building Docker image: ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
+                sh """
+                    docker build -t ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION} .
+                    docker tag ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION} ${DOCKER_IMAGE_NAME}:latest
+                """
             }
         }
-    
+
+        // Uncomment when tests are ready
         // stage('Test') {
         //     steps {
-        //         echo 'Running tests'
-        //         // Nếu có test thì bỏ comment dòng dưới
-        //         bat 'npm test'
+        //         echo '🧪 Running tests'
+        //         sh 'npm test'
         //     }
         // }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying application'
-                sh "docker rm -f \$(docker ps -aq) || true"
-
-                // Nếu muốn chạy container, thêm lệnh dưới:
-                sh "docker run -d -p 3000:3000 --name plancraft_${env.CUSTOM_BUILD_VERSION} plancraft"
-                // bat 'npm start'
+                echo "🚀 Deploying application"
+                sh """
+                    docker stop plancraft || true
+                    docker rm plancraft || true
+                    docker run -d -p 3000:3000 --name plancraft ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
+                """
             }
-        } 
+        }
 
         stage('Login & Push Docker Image') {
             steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: "${DOCKERHUB_CREDENTIALS_ID}",
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh """
-                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
-                            docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
-                            docker push ${DOCKER_IMAGE_NAME}:latest
-                        """
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKERHUB_CREDENTIALS_ID}",
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    echo "🔐 Logging in and pushing image to Docker Hub"
+                    sh """
+                        echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                        docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
+                        docker push ${DOCKER_IMAGE_NAME}:latest
+                    """
                 }
             }
         }
+    }
 
-        stage('Logout Docker') {
-            steps {
-                sh 'docker logout'
-            }
+    post {
+        always {
+            echo "🔓 Logging out from Docker Hub"
+            sh 'docker logout'
         }
-
     }
 }
