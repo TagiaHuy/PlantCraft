@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "mocha",
+    "test": "mocha --exit",
+    "test:auth": "mocha test/auth-api.test.js",
     "test:goal-phases": "mocha test/goal-phase-api.test.js",
     "setup-db": "node scripts/setup-database.js",
     "test-db": "node scripts/test-db-connection.js",

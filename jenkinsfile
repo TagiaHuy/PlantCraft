@@ -44,13 +44,12 @@ pipeline {
             }
         }
 
-        // Uncomment when tests are ready
-        // stage('Test') {
-        //     steps {
-        //         echo '🧪 Running tests'
-        //         sh 'npm test'
-        //     } 
-        // }
+        stage('Test') {
+            steps {
+                echo '🧪 Running tests'
+                sh 'npm test'
+            } 
+        }
 
         stage('Deploy') {
             steps {
