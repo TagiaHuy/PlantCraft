@@ -6,6 +6,7 @@ COPY package*.json ./
 
 COPY scripts ./scripts
 
+RUN npm install
 RUN npm run init
 
 COPY . .
