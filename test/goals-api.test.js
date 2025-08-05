@@ -24,7 +24,8 @@ describe('Goals API Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(response.body).to.be.an('array');
+      expect(response.body).to.have.property('goals');
+      expect(response.body.goals).to.be.an('array');
     });
   });
 
@@ -41,7 +42,7 @@ describe('Goals API Tests', () => {
         .post('/api/goals')
         .set('Authorization', `Bearer ${authToken}`)
         .send(goalData)
-        .expect(200);
+        .expect(201);
 
       expect(response.body).to.have.property('goal');
       expect(response.body.goal).to.have.property('id');

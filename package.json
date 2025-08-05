@@ -8,6 +8,7 @@
     "dev": "nodemon src/index.js",
     "test": "mocha --exit",
     "test:auth": "mocha test/auth-api.test.js --exit",
+    "test:simple": "mocha test/simple-auth.test.js --exit",
     "test:goals": "mocha test/goals-api.test.js --exit",
     "test:tasks": "mocha test/tasks-api.test.js --exit",
     "test:user": "mocha test/user-api.test.js --exit",
