@@ -82,19 +82,24 @@ pipeline {
         stage('Login & Push Docker Image') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS_ID}", usernameVariable: 'tagiahuy2605@gmail.com', passwordVariable: 'Huyta@2605')]) {
-                        // sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-                        // sh "docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
-                        // sh "docker push ${DOCKER_IMAGE_NAME}:latest"
+                    withCredentials([usernamePassword(
+                        credentialsId: "${DOCKERHUB_CREDENTIALS_ID}",
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
                         sh """
-                                echo \$Huyta@2605 | docker login -u \$tagiahuy2605@gmail.com --password-stdin
-                                docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
-                                docker push ${DOCKER_IMAGE_NAME}:latest
-                                echo "DOCKER_USER=\$tagiahuy2605@gmail.com"
+                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                            docker push ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
+                            docker push ${DOCKER_IMAGE_NAME}:latest
                         """
-
                     }
                 }
+            }
+        }
+
+        stage('Logout Docker') {
+            steps {
+                sh 'docker logout'
             }
         }
 
