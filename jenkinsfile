@@ -64,6 +64,7 @@ pipeline {
                 '''
 
                 sh """
+                    docker rm -f plancraft || true
                     docker run -d -p 3000:3000 --name plancraft ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
                 """
             }
