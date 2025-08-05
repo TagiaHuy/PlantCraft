@@ -7,6 +7,21 @@
 npm run test:auth
 ```
 
+### Test Goals API
+```bash
+npm run test:goals
+```
+
+### Test Tasks API
+```bash
+npm run test:tasks
+```
+
+### Test User API
+```bash
+npm run test:user
+```
+
 ### Test Goal Phases API
 ```bash
 npm run test:goal-phases
@@ -20,39 +35,26 @@ npm test
 ## Test Cases
 
 ### Auth API Tests (`auth-api.test.js`)
+- ✅ Login thành công với admin account
+- ✅ Logout thành công với valid token
 
-#### Login Tests
-1. **Successful login with admin account**
-   - Email: `admin@example.com`
-   - Password: `123`
-   - Expected: 200 OK với token và user info
+### Goals API Tests (`goals-api.test.js`)
+- ✅ Lấy danh sách tất cả goals
+- ✅ Tạo goal mới
+- ✅ Lấy goal theo ID
+- ✅ Cập nhật goal
+- ✅ Lấy thống kê goals
 
-2. **Failed login with wrong password**
-   - Email: `admin@example.com`
-   - Password: `wrongpassword`
-   - Expected: 401 Unauthorized
+### Tasks API Tests (`tasks-api.test.js`)
+- ✅ Lấy tasks hôm nay
+- ✅ Tạo task mới
+- ✅ Lấy tất cả tasks
+- ✅ Cập nhật trạng thái task
+- ✅ Lấy thống kê tasks
 
-3. **Failed login with non-existent email**
-   - Email: `nonexistent@example.com`
-   - Password: `123`
-   - Expected: 401 Unauthorized
-
-4. **Failed login with missing fields**
-   - Missing email hoặc password
-   - Expected: 400 Bad Request
-
-#### Logout Tests
-1. **Successful logout with valid token**
-   - Uses token from successful login
-   - Expected: 200 OK
-
-2. **Failed logout without token**
-   - No Authorization header
-   - Expected: 400 Bad Request
-
-3. **Failed logout with invalid token**
-   - Invalid token in Authorization header
-   - Expected: 400 Bad Request
+### User API Tests (`user-api.test.js`)
+- ✅ Lấy thông tin profile user
+- ✅ Cập nhật profile user
 
 ## Requirements
 
