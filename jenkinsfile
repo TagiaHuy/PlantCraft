@@ -27,12 +27,12 @@ pipeline {
             }
         }
 
-        stage('Install dependencies') {
-            steps {
-                echo '📦 Installing npm packages'
-                sh 'npm install'
-            }
-        }
+        // stage('Install dependencies') {
+        //     steps {
+        //         echo '📦 Installing npm packages'
+        //         sh 'npm install'
+        //     }
+        // }
 
         stage('Build Docker Image') {
             steps {
