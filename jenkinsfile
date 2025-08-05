@@ -122,21 +122,7 @@ pipeline {
         stage('Start Services') {
             steps {
                 echo "🔌 Starting MySQL with Docker Compose"
-                sh 'docker-compose up -d db'
-            }
-        }
-
-        stage('Wait for DB Ready') {
-            steps {
-                echo "⏳ Waiting for MySQL to be ready..."
-                sh '''
-                    for i in {1..15}; do
-                      docker exec $(docker ps -qf "name=db") \
-                        mysqladmin ping -h "localhost" --silent && break
-                      echo "Waiting..."
-                      sleep 2
-                    done
-                '''
+                sh 'docker-compose up'
             }
         }
 
