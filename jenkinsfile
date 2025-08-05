@@ -55,9 +55,15 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "🚀 Deploying application"
+                sh '''
+                    CONTAINER_ID=$(docker ps -q --filter "publish=3000")
+                    if [ ! -z "$CONTAINER_ID" ]; then
+                        docker stop $CONTAINER_ID
+                        docker rm $CONTAINER_ID
+                    fi
+                '''
+
                 sh """
-                    docker stop plancraft || true
-                    docker rm plancraft || true
                     docker run -d -p 3000:3000 --name plancraft ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}
                 """
             }
