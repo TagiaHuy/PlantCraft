@@ -27,6 +27,13 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                echo '🧪 Running tests'
+                sh 'npm run test:simple'
+            }  
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo "🐳 Building Docker image: ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION}"
@@ -35,13 +42,6 @@ pipeline {
                     docker tag ${DOCKER_IMAGE_NAME}:${env.CUSTOM_BUILD_VERSION} ${DOCKER_IMAGE_NAME}:latest
                 """
             }
-        }
-
-        stage('Test') {
-            steps {
-                echo '🧪 Running tests'
-                sh 'npm run test:simple'
-            }  
         }
 
         stage('Deploy') {
