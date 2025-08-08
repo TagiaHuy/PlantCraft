@@ -5,6 +5,7 @@ const userController = require('../controllers/userController');
 const taskController = require('../controllers/taskController');
 const goalController = require('../controllers/goalController');
 const goalPhaseController = require('../controllers/goalPhaseController');
+const analyticsController = require('../controllers/analyticsController');
 const { authenticateToken } = require('../middleware/auth');
 
 // Auth routes
@@ -60,6 +61,12 @@ router.post('/tasks', authenticateToken, taskController.createTask);
 router.get('/tasks/today', authenticateToken, taskController.getTodayTasks);
 router.put('/tasks/:id/status', authenticateToken, taskController.updateTaskStatus);
 router.get('/tasks/statistics', authenticateToken, taskController.getTaskStatistics);
+router.get('/tasks/stats', authenticateToken, taskController.getTaskStatsByDate);
 router.get('/tasks', authenticateToken, taskController.getAllTasks);
+
+// 📊 Analytics routes
+router.get('/goals/stats', authenticateToken, goalController.getGoalStatsSummary);
+router.get('/time-tracking/summary', authenticateToken, analyticsController.getTimeTrackingSummary);
+router.get('/analytics/insights', authenticateToken, analyticsController.getProductivityInsights);
 
 module.exports = router;

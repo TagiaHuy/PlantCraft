@@ -408,6 +408,29 @@ const TaskModel = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // Lấy thống kê tasks hoàn thành theo ngày
+    getTaskStatsByDate: async (userId, startDate, endDate) => {
+        try {
+            const query = `
+                SELECT 
+                    DATE(completed_at) as date,
+                    COUNT(*) as completedTasks
+                FROM tasks 
+                WHERE user_id = ? 
+                AND status = 'completed' 
+                AND completed_at IS NOT NULL
+                AND completed_at BETWEEN ? AND ?
+                GROUP BY DATE(completed_at)
+                ORDER BY date ASC
+            `;
+            
+            const rows = await db.query(query, [userId, startDate, endDate]);
+            return Array.isArray(rows) ? rows : [];
+        } catch (error) {
+            throw error;
+        }
     }
 };
 

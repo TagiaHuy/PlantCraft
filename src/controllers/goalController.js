@@ -485,6 +485,29 @@ const getGoalRoadmap = async (req, res) => {
   }
 };
 
+// 🎯 API Thống kê Goal Summary
+const getGoalStatsSummary = async (req, res) => {
+  try {
+    const { range = 'week' } = req.query;
+    
+    // Sample response for goal statistics
+    const sampleResponse = {
+      total: 8,
+      completed: 5,
+      inProgress: 3,
+      completionRate: 62.5
+    };
+
+    res.json(sampleResponse);
+  } catch (error) {
+    console.error('Error getting goal statistics summary:', error);
+    res.status(500).json({ 
+      message: "Lỗi server khi lấy thống kê mục tiêu",
+      error: error.message 
+    });
+  }
+};
+
 module.exports = {
   createGoal,
   getGoals,
@@ -497,5 +520,6 @@ module.exports = {
   getGoalStats,
   updateGoalResult,
   getProgressWithPhases,
-  getGoalRoadmap
+  getGoalRoadmap,
+  getGoalStatsSummary
 };

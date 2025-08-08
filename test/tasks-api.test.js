@@ -93,4 +93,46 @@ describe('Tasks API Tests', () => {
       expect(response.body.statistics).to.have.property('completion_rate');
     });
   });
+
+  describe('GET /api/tasks/stats', () => {
+    it('should get task stats by date successfully', async () => {
+      const response = await request(app)
+        .get('/api/tasks/stats')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body).to.be.an('array');
+      
+      // Check if each item has the required properties
+      if (response.body.length > 0) {
+        const firstItem = response.body[0];
+        expect(firstItem).to.have.property('date');
+        expect(firstItem).to.have.property('completedTasks');
+        expect(firstItem.date).to.match(/^\d{4}-\d{2}-\d{2}$/); // YYYY-MM-DD format
+        expect(firstItem.completedTasks).to.be.a('number');
+      }
+    });
+
+    it('should get task stats by date with custom date range', async () => {
+      const startDate = '2024-01-01';
+      const endDate = '2024-12-31';
+      
+      const response = await request(app)
+        .get(`/api/tasks/stats?start_date=${startDate}&end_date=${endDate}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body).to.be.an('array');
+    });
+
+    it('should return 400 for invalid date format', async () => {
+      const response = await request(app)
+        .get('/api/tasks/stats?start_date=invalid-date&end_date=2024-12-31')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(400);
+
+      expect(response.body).to.have.property('message');
+      expect(response.body.message).to.include('Định dạng ngày không hợp lệ');
+    });
+  });
 }); 
